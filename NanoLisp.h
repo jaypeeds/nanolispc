@@ -16,6 +16,7 @@
 #define BANNER "NanoLisp-V0.0.1 - by jpds - 2021\n"
 
 #define MAX_STRING_LENGTH 255
+#define NUL_TRM 0x00
 #define TAB     0x09
 #define LF      0x10
 #define CR      0x13
@@ -23,11 +24,10 @@
 #define QUOTE_S 0x27
 #define PAREN_L '('
 #define PAREN_R ')'
+#define TILDE   '~'
 
 // Macros
 #define DBG_TRACE(x) if (TRACE) (x)
-#define F_CAR(s) ((!NULLP(s)) ? (LISTP(s) ? (s->unode.list->car): ((NUMBERP(s))? s : NIL)): NIL)
-#define F_CDR(s) (!NULLP(s) ? (LISTP(s) ? (s->unode.list->cdr) : NIL) : NIL)
 
 #define NULLP(S) ((S) == NIL)
 #define QUOTEP(S) ((S) == QUOTE)
@@ -107,27 +107,33 @@ typedef struct struct_env {
 extern env_t GLOBAL_ENV;
 
 // Function prototypes
+
+// Utility functions
+int isNumeric (const char *s);
 void setup(void);
-
-Sexp f_error(String message, Sexp origin);
-
 PtObList new_atom(PtObList position, String name);
 Sexp find_sexp2(const PtObList position, String name);
 Sexp find_sexp(String name);
+
+// Interfaceable functions : Sexp only, denoted by f_ names
+Sexp f_error(String message, Sexp origin);
+Sexp f_car(Sexp s) ;
+Sexp f_cdr(Sexp s) ;
 Sexp f_cons(Sexp s1, Sexp s2);
-
-// Display function
 void f_print(Sexp s);
-void print1(Sexp s, String format);
-void print_atom(Sexp s, String format);
 void f_oblist(void);
-void obprint(const PtObList start);
-
-// Input function
-Sexp read_atom(char buffer[], enum KindOfToken *token, FILE *source);
-Sexp read1(char buffer[], bool list_in_progress, FILE *source);
 Sexp f_read(FILE * source);
 Sexp f_load(Sexp filename);
 Sexp f_eval(Sexp s);
 Sexp f_apply(Sexp fn, Sexp args);
+
+// Display function
+void print1(Sexp s, String format);
+void print_atom(Sexp s, String format);
+void obprint(const PtObList start);
+
+// Input function
+char read_one_char(FILE *source);
+Sexp read_atom(char buffer[], enum KindOfToken *token, FILE *source);
+Sexp read1(char buffer[], bool list_in_progress, FILE *source);
 #endif /* NanoLogo_h */
