@@ -44,7 +44,7 @@ Sexp f_load(Sexp filename) {
     
     file_name = NAME_OF(filename);
     if (TRACE) {
-        printf("\n\tLoading~~>%s\n", file_name);
+        printf("\n\tLoading~~>%s", file_name);
     }
     if (ATOMP(filename) && !NULLP(filename)) {
         if (strcmp(file_name, CONSOLE) == 0) {
@@ -52,14 +52,13 @@ Sexp f_load(Sexp filename) {
         } else {
             infile = fopen(file_name, "r");
         }
-        printf(PROMPT1);
+        printf("\n%s",PROMPT1);
         do {
             s1 = f_read(infile);
-            printf(PROMPT2);
+            printf("\n%s",PROMPT2);
             s2 = f_eval(s1);
-            printf(PROMPT3);
+            printf("\n%s",PROMPT3);
             f_print(s2);
-            // DBG_TRACE(printf("%s",NAME_OF(s2)));
             printf("\n%s", PROMPT1);
         } while (!(feof(infile)
                 || ERROR
@@ -76,31 +75,61 @@ Sexp f_load(Sexp filename) {
 Sexp f_eval(Sexp e) {
     Sexp s;
     String nameOfS;
-    s = f_car(e);
-    nameOfS = NAME_OF(s);
-    if (!NULLP(s)) {
-        DBG_TRACE(f_print(s));
-        if (NUMBERP(s)) { return s; } else
-        if (strcmp(nameOfS, "TRACE") == 0) { TRACE = true; return NIL; } else
-        if (strcmp(nameOfS, "UNTRACE") == 0) { TRACE = false; return NIL; } else
-        if (strcmp(nameOfS, "QUIT") == 0) { DONE = true; return NIL; } else
-        if (strcmp(nameOfS, "OBLIST") == 0) { f_oblist(); return NIL; } else
-        if (strcmp(nameOfS, "QUOTE") == 0) { return e; } else
-            return f_apply(s, f_eval(f_cdr(s)));
+    DBG_TRACE(printf("\nEval: "));
+    DBG_TRACE(f_print(e));
+    if (ATOMP(e)) {
+        if (NULLP(e) || NULLP(VALUE_OF(e)))
+            return NIL;
+        else
+            return VALUE_OF(e);
+    }
+    else {
+        s = f_car(e);
+        nameOfS = NAME_OF(s);
+        if (!NULLP(s)) {
+            DBG_TRACE(f_print(s));
+            if (NUMBERP(s)) { return s; } else
+            if (strcmp(nameOfS, "TRACE") == 0) { TRACE = true; return NIL; } else
+            if (strcmp(nameOfS, "UNTRACE") == 0) { TRACE = false; return NIL; } else
+            if (strcmp(nameOfS, "QUIT") == 0) { DONE = true; return NIL; } else
+            if (strcmp(nameOfS, "OBLIST") == 0) { f_oblist(); return NIL; } else
+            if (strcmp(nameOfS, "SETQ") == 0) { return f_setq(f_cdr(e)); } else
+            if (strcmp(nameOfS, "QUOTE") == 0) { return e; } else
+                // Apply first item (as a function) to rest of items (as arguments)
+                return f_apply(s, eval_list(f_cdr(e)));
     }
     return NIL;
+    }
 }
 
-// THE APPLY FUNCTION
+// THE <APPLY A FUNCTION> FUNCTION
+
 Sexp f_apply(Sexp fn, Sexp args) {
-    DBG_TRACE(printf("Apply: "));
+    DBG_TRACE(printf("\n Apply: "));
     DBG_TRACE(f_print(fn));
     DBG_TRACE(printf("~~>"));
-    DBG_TRACE(f_print(args));
+    DBG_TRACE(f_print(args)); ;
     DBG_TRACE(printf("\n"));
-    if (strcmp(NAME_OF(f_car(fn)), "CAR") == 0) { return f_car(args); } else
-    if (strcmp(NAME_OF(f_car(fn)), "CDR") == 0) { return f_cdr(args); } else
-    return NIL;
+    if (NULLP(fn)) {
+        return NIL;
+    } else if (ATOMP(fn)) {
+        if (strcmp(NAME_OF(f_car(fn)), "CAR") == 0) { return f_car(args); } else
+        if (strcmp(NAME_OF(f_car(fn)), "CDR") == 0) { return f_cdr(args); } else
+        if (strcmp(NAME_OF(f_car(fn)), "PRINT") == 0) { f_print(args); return NIL; } else
+        return f_apply(f_eval(fn), args);
+    } else if (LISTP(fn)) {
+        if (f_car(fn) == LAMBDA) {
+            Sexp last;
+            pair_list(f_car(f_cdr(fn)), args);
+            last = app_list(f_cdr(fn));
+            pair_list(f_car(f_cdr(fn)), args);
+            return last;
+        }
+        if (f_car(fn) == QUOTE) {
+            return f_cons(fn, args);
+        }
+    }
+    return f_error("APPLY", fn);
 }
 
 // PRINT FUNCTION
@@ -108,7 +137,11 @@ void f_print(const Sexp s) {
     if (LISTP(s) && !QUOTEP(f_car(s))) {
         printf("%c", PAREN_L);
     }
-    print1(s,"%s");
+    // Print inside of parens
+    print1(s,FMT_SPC);
+    if (LISTP(s) && !QUOTEP(f_car(s))) {
+        printf("%c ", PAREN_R);
+    }
 }
 
 // PRIMITIVES
@@ -136,6 +169,15 @@ Sexp f_eq(Sexp s1, Sexp s2) {
 
 Sexp f_neq(Sexp s1, Sexp s2) {
     return (s1 != s2) ? T : NIL;
+}
+
+Sexp f_setq(Sexp s) {
+    if (ATOMP(f_car(s)) && !NULLP(f_car(s))) {
+        VALUE_OF(f_car(s)) = f_car(eval_list(f_cdr(s)));
+        return VALUE_OF(f_car(s));
+    } else {
+        return f_error("SETQ", s);
+    }
 }
 
 // Name and Function binding
@@ -169,8 +211,36 @@ void f_oblist(void) {
     printf("\n");
 }
 
-///////////////////////////////////////////////////////////
-// Utility function: Borrowed from RosettaCode.org
+// Utility functions
+// Print out an atom's name
+void print_atom(Sexp s, String format) {
+    printf(format, NAME_OF(s));
+}
+// Print inside of parens
+void print1(Sexp s, String format) {
+    if (NULLP(s))
+        print_atom(NIL, format);
+    else if (ATOMP(s)) {
+        print_atom(s, format);
+    } else {
+        if (QUOTEP(f_car(s))) {
+            printf("%c", QUOTE_S);
+            // Print quoted symbol, could be atom or list
+            f_print(f_car(f_cdr(s)));
+        } else {
+            // Print first item in a list
+            print1(f_car(s), FMT_SPC);
+            // Print rest of items in a list
+            if (NULLP(f_cdr(s)))
+                print1(f_cdr(s), FMT_NO_SPC);
+            else
+                print1(f_cdr(s), FMT_SPC);
+        }
+    }
+}
+
+
+// This one: Borrowed from RosettaCode.org
 int isNumeric (const char *s)
 {
     if (s == NULL || *s == '\0' || isspace(*s))
@@ -208,39 +278,14 @@ PtObList new_atom(const PtObList position, String name) {
     DBG_TRACE(printf("Atome créé: %s\n", NAME_OF(new->info)));
     return new;
 }
-// Print out an atom's name
-void print_atom(Sexp s, String format) {
-    printf(format, NAME_OF(s));
-}
-
-void print1(Sexp s, String format) {
-    if (ATOMP(s)) {
-        print_atom(s, "%s");
-        format = "%s ";
-    } else if (LISTP(s)) {
-        if (QUOTEP(f_car(s))) {
-            printf("%c", QUOTE_S);
-            // Startover with the rest of the list
-            f_print(f_car(f_cdr(s)));
-        } else {
-            print1(f_car(s), format);
-            // Was that the last atom in the list ?
-            if (NULLP(f_cdr(s))) {
-                printf("%c", PAREN_R);
-            } else {
-                // Keep going
-                print1(f_cdr(s), format);
-            }
-        }
-    }
-}
 
 // Dump of given Sexp list
-void obprint(const PtObList start) {
-    if (start != NULL) {
+void obprint(const PtObList position) {
+    PtObList start;
+    start = position;
+    while (start != NULL) {
         f_print(start->info);
-        printf("%c", SPC);
-        obprint(start->next);
+        start = start->next;
     }
 }
 
@@ -385,6 +430,48 @@ Sexp find_sexp2(const PtObList position, String name) {
 Sexp find_sexp(String name) {
     return find_sexp2(OBLIST, name);
 }
+
+// List of evals of each item in a list
+Sexp eval_list(Sexp args) {
+    if (NULLP(args))
+        return NIL;
+    else
+        return f_cons(f_eval(f_car(args)), eval_list(f_cdr(args)));
+}
+
+// Last in evals of each item in a list
+Sexp app_list(Sexp s) {
+    Sexp e;
+    if (NULLP(s))
+        return NIL;
+    else {
+        do {
+            e = f_eval(s);
+            s = f_cdr(s);
+        } while (e != NIL);
+    }
+    return e;
+}
+
+// swap values of 2 Sexps
+void s_swap(Sexp s1, Sexp s2) {
+    Sexp temp;
+    temp = s1;
+    s1 = s2;
+    s2 = temp;
+}
+// Used only for LAMBDA evaluation,
+// to inject actual values into formal arguments
+void pair_list(Sexp names, Sexp values) {
+    if (ERROR)
+        return;
+    else if (LISTP(names)) {
+        pair_list(f_cdr(names), f_cdr(values));
+        s_swap(f_car(names), f_car(values));
+    } else if (! NULLP(names)) {
+        s_swap(VALUE_OF(names), values);
+    }
+}
 // Exception routine
 Sexp f_error(String message, Sexp origin) {
     printf("****** %s ", message);
@@ -393,4 +480,3 @@ Sexp f_error(String message, Sexp origin) {
     ERROR = true;
     return NIL;
 }
-

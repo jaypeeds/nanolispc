@@ -29,10 +29,10 @@
 // Macros
 #define DBG_TRACE(x) if (TRACE) (x)
 
-#define NULLP(S) ((S) == NIL)
+#define NULLP(S) (((S) == NULL) || ((S) == NIL))
 #define QUOTEP(S) ((S) == QUOTE)
 #define ATOMP(S) ((NULLP(S) || (S)->kind == ATOM))
-#define LISTP(S) ((!NULLP(S) && (S)->kind == LIST))
+#define LISTP(S) ((!NULLP(S)) && ((S)->kind == LIST))
 #define NUMBERP(S) (isNumeric(NAME_OF((S))))
 
 #define NAME_OF(s) ((s)->unode.atom->name)
@@ -54,6 +54,8 @@
 #define PROMPT1 "\tR> "
 #define PROMPT2 "E> "
 #define PROMPT3 "P> "
+#define FMT_NO_SPC "%s"
+#define FMT_SPC "%s "
 
 typedef unsigned char KindOfNode;
 typedef struct struct_object* PtObList;
@@ -77,12 +79,12 @@ typedef struct struct_list {
 } list_t;
 
 typedef struct struct_node {
-    PtObList plist;
     enum KindOfNode kind;
     union {
         Atom atom;
         List list;
     } unode;
+    PtObList plist;
 } node_t;
 
 typedef struct struct_object {
@@ -111,15 +113,21 @@ extern env_t GLOBAL_ENV;
 // Utility functions
 int isNumeric (const char *s);
 void setup(void);
+void s_swap(Sexp s1, Sexp s2);
+void pair_list(Sexp names, Sexp values);
 PtObList new_atom(PtObList position, String name);
 Sexp find_sexp2(const PtObList position, String name);
 Sexp find_sexp(String name);
+Sexp eval_list(Sexp s);
+Sexp app_list(Sexp s);
 
 // Interfaceable functions : Sexp only, denoted by f_ names
 Sexp f_error(String message, Sexp origin);
 Sexp f_car(Sexp s) ;
 Sexp f_cdr(Sexp s) ;
+Sexp f_setq(Sexp s);
 Sexp f_cons(Sexp s1, Sexp s2);
+Sexp f_de(Sexp s);
 void f_print(Sexp s);
 void f_oblist(void);
 Sexp f_read(FILE * source);
