@@ -37,8 +37,11 @@
 #define AUTOEVAL(S) ((!NULLP((S))) && ((S)==VALUE_OF((S))))
 #define VARIABLEP(S) ((!NULLP(S)) && (!(NUMBERP((S)))) && ATOMP((S)) && (AUTOEVAL(VALUE_OF((S)))))
 
-#define NAME_OF(s) ((s)->unode.atom->name)
+#define NAME_OF(s)  ((s)->unode.atom->name)
 #define VALUE_OF(s) ((s)->unode.atom->val)
+#define CAR_OF(s)   ((s)->unode.list->car)
+#define CDR_OF(s)   ((s)->unode.list->cdr)
+
 #define TRACE GLOBAL_ENV._trace
 #define ERROR GLOBAL_ENV._error
 #define DONE GLOBAL_ENV._done
@@ -136,6 +139,7 @@ Sexp f_read(FILE * source);
 Sexp f_load(Sexp filename);
 Sexp f_eval(Sexp s);
 Sexp f_apply(Sexp fn, Sexp args);
+Sexp f_atom(Sexp s);
 
 // Display function
 void print1(Sexp s, String format);

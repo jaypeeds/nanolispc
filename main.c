@@ -18,7 +18,7 @@ int main(int argc, const char * argv[]) {
 
     setup();
 
-    DBG_TRACE(f_oblist());
+    // DBG_TRACE(f_oblist());
     INDEX = MAX_STRING_LENGTH;
     printf(BANNER);
     do {

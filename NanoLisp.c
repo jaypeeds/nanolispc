@@ -22,6 +22,7 @@ void setup(void) {
     current = new_atom(current, "CDR");
     current = new_atom(current, "CONS");
     current = new_atom(current, "LAMBDA"); LAMBDA = current->info;
+    current = new_atom(current, "ATOM");
     current = new_atom(current, "READ");
     current = new_atom(current, "PRINT");
     current = new_atom(current, "COND");
@@ -66,7 +67,7 @@ Sexp f_load(Sexp filename) {
         fclose(infile);
         return T;
     } else {
-        return f_error("f_load", filename);
+        return f_error("LOAD", filename);
     }
 }
 
@@ -83,23 +84,32 @@ Sexp f_eval(Sexp e) {
         else
             return VALUE_OF(e);
     } else {
-        s = f_car(e);
+        s = CAR_OF(e);
         nameOfS = NAME_OF(s);
         if (ATOMP(s)) {
-            if (NUMBERP(s) || VARIABLEP(s)) { return f_cons(f_eval(s), eval_list(f_cdr(e))); } else
+            if (NUMBERP(s) || VARIABLEP(s)) {
+                
+                return f_cons(f_eval(s), eval_list(CDR_OF(e)));
+            } else
             if (strcmp(nameOfS, "TRACE") == 0) { TRACE = true; return NIL; } else
             if (strcmp(nameOfS, "UNTRACE") == 0) { TRACE = false; return NIL; } else
             if (strcmp(nameOfS, "QUIT") == 0) { DONE = true; return NIL; } else
             if (strcmp(nameOfS, "OBLIST") == 0) { f_oblist(); return NIL; } else
-            if (strcmp(nameOfS, "SETQ") == 0) { return f_setq(f_cdr(e)); } else
+            if (strcmp(nameOfS, "SETQ") == 0) { return f_setq(CDR_OF(e)); } else
+            if (strcmp(nameOfS, "DE") == 0) { return f_de(CDR_OF(e)); } else
             if (strcmp(nameOfS, "QUOTE") == 0) {
                 Sexp quote;
                 quote = e;
-                return e; } else
+                return e;
+            } else {
+                Sexp cdre, temp;
+                cdre = CDR_OF(e);
+                temp = eval_list(cdre);
                 // Apply first item (as a function) to rest of items (as arguments)
-                return f_apply(s, eval_list(f_cdr(e)));
-    }
-    return NIL;
+                return f_apply(s, temp);
+            }
+        }
+        return f_error("EVAL", e);
     }
 }
 
@@ -114,9 +124,10 @@ Sexp f_apply(Sexp fn, Sexp args) {
     if (NULLP(fn)) {
         return NIL;
     } else if (ATOMP(fn)) {
-        if (strcmp(NAME_OF(f_car(fn)), "CAR") == 0) { return f_car(f_car(args)); } else
-        if (strcmp(NAME_OF(f_car(fn)), "CDR") == 0) { return f_cdr(f_car(args)); } else
-        if (strcmp(NAME_OF(f_car(fn)), "PRINT") == 0) { f_print(f_car(args)); return NIL; } else
+        if (strcmp(NAME_OF(fn), "CAR") == 0) { return f_car(f_car(args)); } else
+        if (strcmp(NAME_OF(fn), "CDR") == 0) { return f_cdr(f_car(args)); } else
+        if (strcmp(NAME_OF(fn), "ATOM") == 0) { return f_atom(f_car(args)); } else
+        if (strcmp(NAME_OF(fn), "PRINT") == 0) { f_print(f_car(args)); return NIL; } else
         return f_apply(f_eval(fn), args);
     } else if (LISTP(fn)) {
         if (f_car(fn) == LAMBDA) {
@@ -149,10 +160,28 @@ void f_print(const Sexp s) {
 // PRIMITIVES
 
 Sexp f_car(Sexp s) {
-    return ((!NULLP(s)) ? (LISTP(s) ? (s->unode.list->car): ((NUMBERP(s))? s : NIL)): NIL);
+    if (NULLP(s))
+        return NIL;
+    else
+        if (LISTP(s))
+                return CAR_OF(s);
+        else
+            if (NUMBERP(s))
+                return s;
+            else
+                return f_error("CAR", s);
 }
 Sexp f_cdr(Sexp s) {
-    return ((!NULLP(s)) ? (LISTP(s) ? (s->unode.list->cdr): ((NUMBERP(s))? s : NIL)): NIL);
+    if (NULLP(s))
+        return NIL;
+    else
+        if (LISTP(s))
+            return CDR_OF(s);
+        else
+            if (NUMBERP(s))
+                return NIL;
+            else
+                return f_error("CDR", s);
 }
 // Input from Console or File
 Sexp f_read(FILE * source) {
@@ -193,7 +222,7 @@ Sexp f_setq(Sexp s) {
 Sexp f_de(Sexp s) {
     // car(s) has already a name, parsed by EVAL
     // Its value will be the rest of the definition, with LAMBDA replacing the name.
-    VALUE_OF(s) = f_cons(LAMBDA, f_cdr(s));
+    VALUE_OF(s) = f_cons(LAMBDA, CDR_OF(s));
     return s;
 }
 
@@ -241,11 +270,11 @@ void print1(Sexp s, String format) {
             // Will it be last one?
             // No   => first + space + rest of list
             // Yes  => first + no space, done!
-            if (!NULLP(f_cdr(s))) {
-                print1(f_car(s), FMT_SPC);
-                print1(f_cdr(s), FMT_SPC);
+            if (!NULLP(CDR_OF(s))) {
+                print1(CAR_OF(s), FMT_SPC);
+                print1(CDR_OF(s), FMT_SPC);
             } else
-                print1(f_car(s), FMT_NO_SPC);
+                print1(CAR_OF(s), FMT_NO_SPC);
 
         }
     }
@@ -405,25 +434,26 @@ Sexp read_atom(char buffer[], enum KindOfToken *token, FILE *source) {
 // Input routines
 char read_one_char(FILE *source) {
     char ignored_cr;
+    int i;
     INDEX++;
-    // DBG_TRACE(printf("%d/%ld\n", INDEX, strlen(BUFFER)));
-    if (INDEX == strlen(BUFFER))
+    if (TRACE) {
+        printf("\n«%s»\n", BUFFER);
+        for (i = 0; i < INDEX; i++)
+            printf("%c",SPC);
+        printf(" ^\n");
+        for (i = 0; i < INDEX; i++)
+            printf("%c",SPC);
+        printf(" |\n");
+    }
+    if (INDEX == strlen(BUFFER)) {
         return SPC;
+    }
     else if (INDEX > strlen(BUFFER)) {
         // Read a new buffer
         fscanf(source, "%s", BUFFER);
-        //fgets(BUFFER, MAX_STRING_LENGTH, source);
         // Read and ignore the carriage return
         ignored_cr = fgetc(source);
         INDEX = 0;
-        if (TRACE) {
-            int i;
-            printf("%ld ", strlen(BUFFER));
-            for (i = 0; i <= strlen(BUFFER);i++) {
-                printf("'%c'(%u) | ", BUFFER[i], BUFFER[i]);
-            }
-            printf("\n");
-        }
     }
     return BUFFER[INDEX];
 }
