@@ -34,6 +34,8 @@
 #define ATOMP(S) ((NULLP(S) || (S)->kind == ATOM))
 #define LISTP(S) ((!NULLP(S)) && ((S)->kind == LIST))
 #define NUMBERP(S) (isNumeric(NAME_OF((S))))
+#define AUTOEVAL(S) ((!NULLP((S))) && ((S)==VALUE_OF((S))))
+#define VARIABLEP(S) ((!NULLP(S)) && (!(NUMBERP((S)))) && ATOMP((S)) && (AUTOEVAL(VALUE_OF((S)))))
 
 #define NAME_OF(s) ((s)->unode.atom->name)
 #define VALUE_OF(s) ((s)->unode.atom->val)
