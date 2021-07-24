@@ -58,7 +58,7 @@ Sexp f_load(Sexp filename) {
             s1 = f_read(infile);
             printf("\n%s",PROMPT2);
             s2 = f_eval(s1);
-            printf("\n%s",PROMPT3);
+            // printf("\n%s",PROMPT3);
             f_print(s2);
             printf("\n%s", PROMPT1);
         } while (!(feof(infile)
@@ -78,36 +78,29 @@ Sexp f_eval(Sexp e) {
     String nameOfS;
     DBG_TRACE(printf("\nEval: "));
     DBG_TRACE(f_print(e));
-    if (ATOMP(e)) {
-        if (NULLP(e) || NULLP(VALUE_OF(e)))
+    if (ERROR)
+        return e;
+    else if (ATOMP(e)) {
+        if (NULLP(VALUE_OF(e)))
             return NIL;
         else
             return VALUE_OF(e);
     } else {
-        s = CAR_OF(e);
+        s = f_car(e);
         nameOfS = NAME_OF(s);
         if (ATOMP(s)) {
             if (NUMBERP(s) || VARIABLEP(s)) {
-                
-                return f_cons(f_eval(s), eval_list(CDR_OF(e)));
+                return f_cons(s, f_eval_each_item_of_list(f_cdr(e)));
             } else
-            if (strcmp(nameOfS, "TRACE") == 0) { TRACE = true; return NIL; } else
-            if (strcmp(nameOfS, "UNTRACE") == 0) { TRACE = false; return NIL; } else
-            if (strcmp(nameOfS, "QUIT") == 0) { DONE = true; return NIL; } else
-            if (strcmp(nameOfS, "OBLIST") == 0) { f_oblist(); return NIL; } else
-            if (strcmp(nameOfS, "SETQ") == 0) { return f_setq(CDR_OF(e)); } else
-            if (strcmp(nameOfS, "DE") == 0) { return f_de(CDR_OF(e)); } else
-            if (strcmp(nameOfS, "QUOTE") == 0) {
-                Sexp quote;
-                quote = e;
-                return e;
-            } else {
-                Sexp cdre, temp;
-                cdre = CDR_OF(e);
-                temp = eval_list(cdre);
+                if (strcmp(nameOfS, "QUOTE") == 0) { return f_car(f_cdr(e)); } else
+                if (strcmp(nameOfS, "TRACE") == 0) { TRACE = true; return NIL; } else
+                if (strcmp(nameOfS, "UNTRACE") == 0) { TRACE = false; return NIL; } else
+                if (strcmp(nameOfS, "QUIT") == 0) { DONE = true; return NIL; } else
+                if (strcmp(nameOfS, "OBLIST") == 0) { f_oblist(); return NIL; } else
+                if (strcmp(nameOfS, "SETQ") == 0) { return f_setq(f_cdr(e)); } else
+                if (strcmp(nameOfS, "DE") == 0) { return f_de(f_cdr(e)); } else
                 // Apply first item (as a function) to rest of items (as arguments)
-                return f_apply(s, temp);
-            }
+                return f_apply(s, f_eval_each_item_of_list(f_cdr(e)));
         }
         return f_error("EVAL", e);
     }
@@ -128,12 +121,18 @@ Sexp f_apply(Sexp fn, Sexp args) {
         if (strcmp(NAME_OF(fn), "CDR") == 0) { return f_cdr(f_car(args)); } else
         if (strcmp(NAME_OF(fn), "ATOM") == 0) { return f_atom(f_car(args)); } else
         if (strcmp(NAME_OF(fn), "PRINT") == 0) { f_print(f_car(args)); return NIL; } else
+        if (strcmp(NAME_OF(fn), "LOAD") == 0) {
+            if (QUOTEP(f_car(f_car(fn))))
+                return f_load(f_car(f_cdr(f_car(args))));
+            else
+                f_load(f_car(args));
+        } else
         return f_apply(f_eval(fn), args);
     } else if (LISTP(fn)) {
         if (f_car(fn) == LAMBDA) {
             Sexp last;
             pair_list(f_car(f_cdr(fn)), args);
-            last = app_list(f_cdr(f_cdr((fn))));
+            last = f_eval_each_return_last_item_of_list(f_cdr(f_cdr((fn))));
             pair_list(f_car(f_cdr(fn)), args);
             return last;
         }
@@ -152,9 +151,6 @@ void f_print(const Sexp s) {
     }
     // Print inside of parens
     print1(s,FMT_SPC);
-    if (LISTP(s) && !QUOTEP(f_car(s))) {
-        printf("%c ", PAREN_R);
-    }
 }
 
 // PRIMITIVES
@@ -164,7 +160,7 @@ Sexp f_car(Sexp s) {
         return NIL;
     else
         if (LISTP(s))
-                return CAR_OF(s);
+            return s->unode.list->car;
         else
             if (NUMBERP(s))
                 return s;
@@ -176,7 +172,7 @@ Sexp f_cdr(Sexp s) {
         return NIL;
     else
         if (LISTP(s))
-            return CDR_OF(s);
+            return s->unode.list->cdr;
         else
             if (NUMBERP(s))
                 return NIL;
@@ -206,7 +202,7 @@ Sexp f_setq(Sexp s) {
     Sexp variable, values, temp_values;
     variable = f_car(s);
     values = f_cdr(s);
-    temp_values = eval_list(values);
+    temp_values = f_eval_each_item_of_list(values);
     if (ATOMP(variable) && !NULLP(variable)) {
         VALUE_OF(variable) = f_car(temp_values);
         DBG_TRACE(printf("\nSETQ %s <- ",NAME_OF(variable)));
@@ -222,8 +218,15 @@ Sexp f_setq(Sexp s) {
 Sexp f_de(Sexp s) {
     // car(s) has already a name, parsed by EVAL
     // Its value will be the rest of the definition, with LAMBDA replacing the name.
-    VALUE_OF(s) = f_cons(LAMBDA, CDR_OF(s));
-    return s;
+    if (LISTP(s)) {
+        Sexp func_name, definition;
+        func_name = f_car(s);
+        definition = f_cdr(s);
+        VALUE_OF(func_name) = f_cons(LAMBDA, definition);
+        return f_car(s);
+    } else {
+        return f_error("DE",s);
+    }
 }
 
 // List constructor
@@ -236,7 +239,7 @@ Sexp f_cons(Sexp s1, Sexp s2) {
     } else {
         new_list = malloc(sizeof(node_t));
         new_list->kind = LIST;
-        new_list->unode.list = malloc(sizeof(node_t));
+        new_list->unode.list = malloc(sizeof(list_t));
         new_list->unode.list->car = s1;
         new_list->unode.list->cdr = s2;
         return new_list;
@@ -254,7 +257,7 @@ void f_oblist(void) {
 void print_atom(Sexp s, String format) {
     printf(format, NAME_OF(s));
 }
-// Print inside of parens
+// Print a list, less the first left paren
 void print1(Sexp s, String format) {
     if (NULLP(s))
         print_atom(NIL, format);
@@ -266,16 +269,15 @@ void print1(Sexp s, String format) {
             // Print quoted symbol, could be atom or list
             f_print(f_car(f_cdr(s)));
         } else {
-            // Print first item in a list, then rest
-            // Will it be last one?
-            // No   => first + space + rest of list
-            // Yes  => first + no space, done!
-            if (!NULLP(CDR_OF(s))) {
-                print1(CAR_OF(s), FMT_SPC);
-                print1(CDR_OF(s), FMT_SPC);
-            } else
-                print1(CAR_OF(s), FMT_NO_SPC);
-
+            if((!NULLP(f_car(s)))
+               && LISTP(f_car(s))
+               && (!QUOTEP(f_car(f_car(s)))))
+                printf("%c",PAREN_L);
+            print1(f_car(s), FMT_SPC);
+            if (NULLP(f_cdr(s)))
+                printf("%c",PAREN_R);
+            else
+                print1(f_cdr(s), FMT_SPC);
         }
     }
 }
@@ -302,7 +304,7 @@ PtObList new_atom(const PtObList position, String name) {
     
     new = malloc(sizeof(object_t));
     new->info = malloc(sizeof(node_t));
-    new->info->plist = NULL;
+    // new->info->plist = NULL;
     new->info->kind = ATOM;
     new->info->unode.atom = malloc(sizeof(atom_t));
     NAME_OF(new->info) = name;
@@ -455,7 +457,7 @@ char read_one_char(FILE *source) {
         ignored_cr = fgetc(source);
         INDEX = 0;
     }
-    return BUFFER[INDEX];
+    return toupper(BUFFER[INDEX]);
 }
 // Search in given sexp list
 Sexp find_sexp2(const PtObList position, String name) {
@@ -475,19 +477,16 @@ Sexp find_sexp(String name) {
 }
 
 // List of evals of each item in a list
-Sexp eval_list(Sexp args) {
+Sexp f_eval_each_item_of_list(Sexp args) {
     if (NULLP(args))
         return NIL;
     else {
-        Sexp first, rest;
-        first = f_eval(f_car(args));
-        rest = eval_list(f_cdr(args));
-        return f_cons(first, rest);
+        return f_cons(f_eval(f_car(args)), f_eval_each_item_of_list(f_cdr(args)));
     }
 }
 
 // Last in evals of each item in a list
-Sexp app_list(Sexp s) {
+Sexp f_eval_each_return_last_item_of_list(Sexp s) {
     Sexp e;
     if (NULLP(s))
         return NIL;

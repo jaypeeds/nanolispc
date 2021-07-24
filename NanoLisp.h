@@ -16,10 +16,6 @@
 #define BANNER "NanoLisp-V0.0.1 - by jpds - 2021\n"
 
 #define MAX_STRING_LENGTH 255
-#define NUL_TRM 0x00
-#define TAB     0x09
-#define LF      0x10
-#define CR      0x13
 #define SPC     0x20
 #define QUOTE_S 0x27
 #define PAREN_L '('
@@ -39,8 +35,8 @@
 
 #define NAME_OF(s)  ((s)->unode.atom->name)
 #define VALUE_OF(s) ((s)->unode.atom->val)
-#define CAR_OF(s)   ((s)->unode.list->car)
-#define CDR_OF(s)   ((s)->unode.list->cdr)
+//#define CAR_OF(s)   ((s)->unode.list->car)
+//#define CDR_OF(s)   ((s)->unode.list->cdr)
 
 #define TRACE GLOBAL_ENV._trace
 #define ERROR GLOBAL_ENV._error
@@ -89,7 +85,7 @@ typedef struct struct_node {
         Atom atom;
         List list;
     } unode;
-    PtObList plist;
+    // PtObList plist;
 } node_t;
 
 typedef struct struct_object {
@@ -123,8 +119,6 @@ void pair_list(Sexp names, Sexp values);
 PtObList new_atom(PtObList position, String name);
 Sexp find_sexp2(const PtObList position, String name);
 Sexp find_sexp(String name);
-Sexp eval_list(Sexp s);
-Sexp app_list(Sexp s);
 
 // Interfaceable functions : Sexp only, denoted by f_ names
 Sexp f_error(String message, Sexp origin);
@@ -140,6 +134,8 @@ Sexp f_load(Sexp filename);
 Sexp f_eval(Sexp s);
 Sexp f_apply(Sexp fn, Sexp args);
 Sexp f_atom(Sexp s);
+Sexp f_eval_each_item_of_list(Sexp s);
+Sexp f_eval_each_return_last_item_of_list(Sexp s);
 
 // Display function
 void print1(Sexp s, String format);
