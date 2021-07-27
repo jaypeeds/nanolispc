@@ -49,7 +49,7 @@ Les conventions de nommage ont été rendues plus strictes: Les primitives sont 
 |COND|Evaluation conditionnelle|(COND (L 'Non_Vide)(T 'Vide')) --> 'Non_Vide' si L est non vide, 'Vide sinon'|[Sexp f_cond(Sexp s);](https://github.com/jaypeeds/nanolispc/blob/01a8c48a98092db635071a66499a996343d8d1b8/NanoLisp.c#L257)|
 |DE|Lie un nom à une définition de fonction.|(DE DUP(X)(CONS X (CONS X) ())), (DUP 1)--> (1 1)|[Sexp f_de(Sexp s);](https://github.com/jaypeeds/nanolispc/blob/01a8c48a98092db635071a66499a996343d8d1b8/NanoLisp.c#L225)|
 |LOAD|Charge et interprète un fichier .nlsp|(LOAD 'Exemples/dbg-de.nlsp') --> Si le fichier ne se termine pas par (QUIT), rend la main à la console|[Sexp f_load(Sesxp s);](https://github.com/jaypeeds/nanolispc/blob/01a8c48a98092db635071a66499a996343d8d1b8/NanoLisp.c#L42)|
-|TRACE|Active les trace de debug|(TRACE)|[n/a](n/a)|
+|TRACE|Active les traces de debug|(TRACE)|[n/a](n/a)|
 |UNTRACE|Désactive les traces de debug|(UNTRACE)|[n/a](n/a)|
 |QUIT|Quitte l'interprète Nano Lisp|(QUIT)|[n/a](n/a)|
 
