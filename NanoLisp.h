@@ -111,8 +111,6 @@ typedef struct struct_env {
 } env_t;
 
 extern env_t GLOBAL_ENV;
-//extern unsigned int INDEX;
-//extern char BUFFER[];
 
 // Function prototypes
 
