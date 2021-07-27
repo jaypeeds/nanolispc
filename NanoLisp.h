@@ -125,7 +125,7 @@ Sexp find_sexp2(const PtObList position, String name);
 Sexp find_sexp(String name);
 
 // Interfaceable functions : Sexp only, denoted by f_ names
-Sexp f_error(String message, Sexp origin);
+Sexp error(String message, Sexp origin);
 Sexp f_car(Sexp s) ;
 Sexp f_cdr(Sexp s) ;
 Sexp f_setq(Sexp s);

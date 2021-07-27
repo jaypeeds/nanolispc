@@ -55,7 +55,7 @@ Sexp f_load(Sexp filename) {
             infile = fopen(file_name, "r");
             if (!infile) {
                 perror("fopen");
-                return f_error(strerror(errno), filename);
+                return error(strerror(errno), filename);
             }
         }
         printf("\n%s",PROMPT1);
@@ -71,7 +71,7 @@ Sexp f_load(Sexp filename) {
         fclose(infile);
         return T;
     } else {
-        return f_error("LOAD", filename);
+        return error("LOAD", filename);
     }
 }
 
@@ -148,7 +148,7 @@ Sexp f_apply(Sexp fn, Sexp args) {
         }
     }
     // Error path
-    return f_error("APPLY", fn);
+    return error("APPLY", fn);
 }
 
 // PRINT FUNCTION
@@ -172,7 +172,7 @@ Sexp f_car(Sexp s) {
             if (ATOMP(s) || NUMBERP(s))
                 return s;
             else
-                return f_error("CAR", s);
+                return error("CAR", s);
 }
 Sexp f_cdr(Sexp s) {
     if (NULLP(s))
@@ -184,7 +184,7 @@ Sexp f_cdr(Sexp s) {
             if (NUMBERP(s))
                 return NIL;
             else
-                return f_error("CDR", s);
+                return error("CDR", s);
 }
 // Input from Console or File
 Sexp f_read(FILE * source) {
@@ -217,7 +217,7 @@ Sexp f_setq(Sexp s) {
         DBG_TRACE(printf("\n"));
         return VALUE_OF(variable);
     } else {
-        return f_error("SETQ", s);
+        return error("SETQ", s);
     }
 }
 
@@ -232,7 +232,7 @@ Sexp f_de(Sexp s) {
         VALUE_OF(func_name) = f_cons(LAMBDA, definition);
         return f_car(s);
     } else {
-        return f_error("DE",s);
+        return error("DE",s);
     }
 }
 
@@ -240,7 +240,7 @@ Sexp f_de(Sexp s) {
 Sexp f_cons(Sexp s1, Sexp s2) {
     Sexp new_list;
     if (!(NULLP(s2) || NUMBERP(s2) || LISTP(s2))) {
-        return f_error("cons", s2);
+        return error("cons", s2);
     } else if (NUMBERP(s2)) {
         return f_cons(s1, f_cons(s2, NIL));
     } else {
@@ -545,7 +545,7 @@ void s_pair_list(Sexp *names, Sexp *values) {
     }
 }
 // Exception routine
-Sexp f_error(String message, Sexp origin) {
+Sexp error(String message, Sexp origin) {
     printf("****** %s ", message);
     f_print(origin);
     printf("******\n");
