@@ -49,8 +49,7 @@ Les conventions de nommage ont été rendues plus strictes: Les primitives sont 
 |COND|Evaluation conditionnelle|(COND (L 'Non_Vide)(T 'Vide')) --> 'Non_Vide' si L est non vide, 'Vide sinon'|[Sexp f_cond(Sexp s);](https://github.com/jaypeeds/nanolispc/blob/01a8c48a98092db635071a66499a996343d8d1b8/NanoLisp.c#L257)|
 |DE|Lie un nom à une définition de fonction.|(DE DUP(X)(CONS X (CONS X) ())), (DUP 1)--> (1 1)|[Sexp f_de(Sexp s);](https://github.com/jaypeeds/nanolispc/blob/01a8c48a98092db635071a66499a996343d8d1b8/NanoLisp.c#L225)|
 |LOAD|Charge et interprète un fichier .nlsp|(LOAD 'Exemples/dbg-de.nlsp') --> Si le fichier ne se termine pas par (QUIT), rend la main à la console|[Sexp f_load(Sesxp s);](https://github.com/jaypeeds/nanolispc/blob/01a8c48a98092db635071a66499a996343d8d1b8/NanoLisp.c#L42)|
-|OBLIST|Liste tous les atomes définis|(OBLIST) --> 	() T QUOTE CAR CDR CONS LAMBDA ATOM READ PRINT COND TRACE UNTRACE SETQ LOAD OBLIST QUIT  
-|[void f_oblist(void)](https://github.com/jaypeeds/nanolispc/blob/91d7d358d2f6d6de99c6640a6f81e102870319d4/NanoLisp.c#L268)|
+|OBLIST|Liste tous les atomes définis|(OBLIST) --> 	() T QUOTE CAR CDR CONS LAMBDA ATOM READ PRINT COND TRACE UNTRACE SETQ LOAD OBLIST QUIT|[void f_oblist(void)](https://github.com/jaypeeds/nanolispc/blob/91d7d358d2f6d6de99c6640a6f81e102870319d4/NanoLisp.c#L268)|
 |TRACE|Active les trace de debug|(TRACE)|[n/a](n/a)|
 |UNTRACE|Désactive les traces de debug|(UNTRACE)|[n/a](n/a)|
 |QUIT|Quitte l'interprète Nano Lisp|(QUIT)|[n/a](n/a)|
