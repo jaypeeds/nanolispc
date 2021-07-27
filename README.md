@@ -46,6 +46,7 @@ Les conventions de nommage ont été rendues plus strictes: Les primitives sont 
 
 ## La TO DO list
 - Implémenter l'arithmétique entière et réelle.
+- Implémenter les comparaisons numériques.
 - Permettre la lecture à la console. (SETQ A (READ)) !
 - Fonctions mathématiques et trigo en degrés.
 - Boucles. Possibles grâce à EVAL. Voir Exemples/test-boucle.nlsp
