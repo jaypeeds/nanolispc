@@ -136,6 +136,7 @@ Sexp f_cdr(Sexp s) ;
 Sexp f_setq(Sexp s);
 Sexp f_cons(Sexp s1, Sexp s2);
 Sexp f_de(Sexp s);
+Sexp f_eq(Sexp s1, Sexp s2);
 void f_print(Sexp s);
 void f_oblist(void);
 Sexp f_read(FILE * source);
@@ -145,6 +146,7 @@ Sexp f_apply(Sexp fn, Sexp args);
 Sexp f_atom(Sexp s);
 Sexp f_eval_each_item_of_list(Sexp s);
 Sexp f_eval_each_return_last_item_of_list(Sexp s);
+Sexp f_eval_cond(Sexp s);
 
 // Display function
 void print1(Sexp s, String format);

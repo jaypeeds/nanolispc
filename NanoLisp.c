@@ -97,6 +97,7 @@ Sexp f_eval(Sexp e) {
                 return f_cons(s, f_eval_each_item_of_list(f_cdr(e)));
             } else
                 if (strcmp(nameOfS, "QUOTE") == 0) { return f_car(f_cdr(e)); } else
+                if (strcmp(nameOfS, "COND") == 0) { return f_eval_cond(f_cdr(e)); } else
                 if (strcmp(nameOfS, "TRACE") == 0) { TRACE = true; return MUTE; } else
                 if (strcmp(nameOfS, "UNTRACE") == 0) { TRACE = false; return MUTE; } else
                 if (strcmp(nameOfS, "QUIT") == 0) { DONE = true; return MUTE; } else
@@ -124,9 +125,8 @@ Sexp f_apply(Sexp fn, Sexp args) {
         if (strcmp(NAME_OF(fn), "CAR") == 0) { return f_car(f_car(args)); } else
         if (strcmp(NAME_OF(fn), "CDR") == 0) { return f_cdr(f_car(args)); } else
         if (strcmp(NAME_OF(fn), "CONS") == 0) { return f_cons(f_car(args),f_car(f_cdr(args))); } else
+        if (strcmp(NAME_OF(fn), "EQ") == 0) { return f_eq(f_car(args), f_car(f_cdr(args))); } else
         if (strcmp(NAME_OF(fn), "ATOM") == 0) { return f_atom(f_car(args)); } else
-        if (strcmp(NAME_OF(fn), "LAST") == 0) { return f_eval_each_return_last_item_of_list(f_car(args)); } else
-        if (strcmp(NAME_OF(fn), "EVLIS") == 0) { return f_eval_each_item_of_list(f_car(args)); } else
         if (strcmp(NAME_OF(fn), "PRINT") == 0) { f_print(f_car(args)); return MUTE; } else
         if (strcmp(NAME_OF(fn), "LOAD") == 0) {
             if (QUOTEP(f_car(f_car(args))))
@@ -253,6 +253,17 @@ Sexp f_cons(Sexp s1, Sexp s2) {
     }
 }
 
+// Conditional evaluation
+Sexp f_eval_cond(Sexp s) {
+    if (!NULLP(f_eval(f_car(f_car(s))))) {
+        return f_eval_each_return_last_item_of_list(f_cdr(f_car(s)));
+    } else {
+        if (!NULLP(f_cdr(s))) {
+            return f_eval_cond(f_cdr(s));
+        }
+    }
+    return NIL;
+}
 // Dump of global Sexp list
 void f_oblist(void) {
     obprint(OBLIST);

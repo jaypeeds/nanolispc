@@ -9,12 +9,15 @@
 #include "NanoLisp.h"
 
 env_t GLOBAL_ENV;
+unsigned int INDEX;
+char BUFFER[MAX_STRING_LENGTH];
 
 int main(int argc, const char * argv[]) {
     Sexp m, s;
    
     DONE = false;
-    TRACE = true;
+    TRACE = false;
+    INDEX = 0;
 
     setup();
 
