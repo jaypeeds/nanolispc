@@ -119,13 +119,11 @@ int isNumeric (const char *s);
 void setup(void);
 void s_swap(Sexp *s1, Sexp *s2);
 void s_pair_list(Sexp *names, Sexp *values);
-Sexp clone(Sexp s);
 PtObList new_atom(PtObList position, String name);
 Sexp find_sexp2(const PtObList position, String name);
 Sexp find_sexp(String name);
 
 // Interfaceable functions : Sexp only, denoted by f_ names
-Sexp error(String message, Sexp origin);
 Sexp f_car(Sexp s) ;
 Sexp f_cdr(Sexp s) ;
 Sexp f_setq(Sexp s);
@@ -139,9 +137,13 @@ Sexp f_load(Sexp filename);
 Sexp f_eval(Sexp s);
 Sexp f_apply(Sexp fn, Sexp args);
 Sexp f_atom(Sexp s);
+Sexp f_cond(Sexp s);
+// Could be but are not exposed
 Sexp f_eval_each_item_of_list(Sexp s);
 Sexp f_eval_each_return_last_item_of_list(Sexp s);
-Sexp f_eval_cond(Sexp s);
+
+// Error routine
+Sexp error(String message, Sexp origin);
 
 // Display function
 void print1(Sexp s, String format);

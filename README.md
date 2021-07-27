@@ -25,11 +25,7 @@ Si on considère le fait que la plupart des implémentations initiales de Lisp o
 
 ## Le bilan de la restauration
 Il a fallu faire des ajustements, l'interpréte ne lisait pas la console mais un fichier source conventionnel SOURCE.NLSP. Mais ce n'est plus le cas depuis que la console es opérationnelle. La plupart des fonctions, notamment la création et la définition de fonctions par l'utilisateur, sont opérationnelles.
-Les conventions de nommage ont été rendues plus strictes: Les primitives sont nommées F suivi de la primitive : FCAR, FCDR mais pour être exploitables, ces opérateurs devraient tous avoir un résultat de type S-Exp, ou SGRAPHE dans ce code. FNULL ne respectait pas cette convention et renvoyait un booléen du langage hôte inexploittable par l'interprète.
-
-Petite note sur la lecture clavier, il faut 2 return pour conclure une saisie, à cause du test EOF qui réclame cette saisie supplémentaire.
-
-La dernière version a subi un peu de refactoring.
+Les conventions de nommage ont été rendues plus strictes: Les primitives sont nommées F suivi de la primitive : f_car, f_cdr mais pour être exploitables, ces opérateurs devraient tous avoir un résultat de type S-Exp, ou SGRAPHE dans ce code. FNULL ne respectait pas cette convention et renvoyait un booléen du langage hôte inexploittable par l'interprète.
 
 ## Et ensuite ?
 - Implémenter l'arithmétique entière. Fait (en réel aussi) !
@@ -42,68 +38,20 @@ La dernière version a subi un peu de refactoring.
 - Gestion plus grâcieuse des erreurs. A faire !
 
 ## Petit guide du langage
-Cette version du langage est sensible à la casse, les mots-clés doivent être écrits en majuscules.
-- Pas de notion de variables, ni de types, mais notion de symboles nommés, et de deux formes de valeurs:
- - Atome : valeur isolée,
-   - Texte sans blanc précédé d'une seule apostrophe ou quote. En mémoire, une liste est utilisée car un atome nommé QUOTE est inséré devant le texte sans blanc, puis enlevé automatique lors de l'impression.
-   - Nombre entier ou réel
-   - Référence à un autre symbole
-   - () est une valeur spéciale, ni atome, ni liste. On l'appelle NIL. C'est un élément neutre dans toute opération de composition. C'est aussi la valeur booléenne Faux.
-   - T est la valeur booléenne Vrai.
- - Liste : plusieurs valeurs entre parenthèses.
-
-
-- Tout code LISP est aussi une liste entre parenthèses. C'est la notion dite d'homoiconocité du langage.
-
-- Création d'un symbole: (SETQ *nom* *valeur*)
-  - (SETQ Ville 'Paris) L'apostrophe bloque l'évaluation, Paris est une valeur, et pas une référence à un autre symbole.
-  - (SETQ LesNeveuxDeDonald '(Riri Fifi Loulou))
-- Valeur d'un symbole
-  - (Ville) répondra 'Paris.
-
-- Exécution conditionnelle: (COND ((test) actions) ((test) actions)...)
-  - Toutes les sous-listes dont le test est vrai sont évaluées, la valeur de retour est celle de la dernière sous-liste éxécutée. Un test est une S-EXP qui s'évalue à une liste vide pour Faux ou non-vide pour Vrai.
-
-- Si on a affaire à un atome, alors on peut s'intéresser à son nom et à sa valeur.
-
-- Si on a affaire à une liste, alors on peut s'intéresser à son premier élément, toujours un atome, nommé historiquement le CAR, et au reste de la liste, le CDR, qui est toujours une liste. Parfois, une fonction est écrite pour argument atome. Si on veut utiliser cette fonction avec une liste, il faut penser à en extraire le CAR, puis le CAR du CDR, etc..
-
-- Construire une liste : (CONS *atome* *liste*) le constructeur de liste CONS est rarement nécessaire, les listes sont implicites grâce aux parenthèses. Il ne faut jamais ajouter de parenthèses en pensant augmenter la priorité dans l'évaluation. La plupart du temps l'écriture la plus simple est la seule correcte, et c'est parfois une difficulté pour les débutants (dont je suis).
-
-- Création d'une nouvelle fonction :
-  - (DE *fonction*(*un seul argument atome ou liste*) (*Instructions*)) ou...
-  - (DE *fonction*(*arg1* *arg2*...) (*Instructions*))
-
-La récursivité est possible, gérée par le langage hôte. Avant et après chaque appel de lambda, la valeur des arguments formels est permutée avec celles des nouveaux arguments. C'est la fonction PAIRLIS du code Pascal.
-
-Les nombres n'existent pas comme tels. A la création d'un atome, un test de "numéricité" est appliqué à son nom, et si le nom peut se traduire en valeur numérique, son nom est aussi sa valeur, le symbole est dit auto-évalué. En natif, 0, 1 font partie du "dictionnaire" initial de symboles. Les autres nombres sont créés à la demande, comme des symboles ordinaires, sauf qu'ils sont auto-evalués. Les chaînes de caractères ou toutes valeurs "littérales" sont aussi auto-évaluées.
-
-Le dossier Exemples contient les snippets ayant servi pendant le debug et l'élaboration des extensions.
-
-## Comment l'interprète fonctionne
-Le modèle mémoire : La mémoire est structurée comme une liste chaînée du langage hôte (Linked List), d'un type de base qui est la S-EXP simplement constituée d'une cellule "info" et d'un pointeur "suivant".
-OBLIST --> [Info/Suivant] --> [Info/Suivant] --> null du langage hôte (NIL en Pascal, 0 en C). Le lien "Suivant" n'est manipulable que par le langage hôte.
-"Info" contient un pointeur vers un nœud de mémoire de "donnée" qui est "typé":
-[Type/Union de types occupant la même taille mémoire]
-- Soit [ATOME/Nom/Valeur], "Nom" est une chaîne de caractères du langage hôte, "Valeur" un pointeur vers une autre S-EXP.
-- Soit [LISTE/CAR/CDR], CAR et CDR sont tous les deux des pointeurs vers d'autres S-EXP.
-
-Pour implémenter les propriétés, j'ai ajouté un pointeur vers une liste "privée" de S-EXP, représentant les propriétés:
-[Propriétés/Type/Deux champs du type]
-- L'interprète lit un atome jusqu'à un séparateur blanc, tabulation, ou saut à la ligne, puis le qualifie:
-  - Est-ce un atome auto-évalué ? Si oui le créer en connaissance de sa particularité.
-  - Est-ce une forme spéciale ? DE, SETQ...qui va modifier l'environnement et la traiter comme il convient.
-  - Les fonctions sont aussi des listes: Le CAR pointe vers un atome portant le nom. Le CDR contient deux listes, celle des arguments, celle de la définition. Pour dénoter que cette dernière est "éxécutable", un atome nommé LAMBDA est inséré en tête de la liste de définition de la fonction.
-- Sinon, le reste de la liste de la commande est lu à la console ou d'un fichier.
-  - Par défaut, après toutes les autres possibilités, le CAR est envisagé comme étant un nom de fonction et le CDR comme sa liste d'arguments. Le nom est évalué comme la liste commençant par LAMBDA, le tout est alors passé à la fonction APPLY(EVAL(*nom de fonction*), *arguments*), ce qui se traduit comme APPLY(*LAMBDA définition*, *Arguments*).
-
-Le résultat est imprimé, puis on recommence. C'est exactement la formule désormais classique d'un interprète:
-  - Lire ou *Read*
-  - Evaluer ou *Evaluate*
-  - Imprimer le résultat ou *Print*
-  - Boucler ou *Loop*...
-
-  C'est un *REPL*.
+| Fonction | Description | Exemple | Code C |
+|---------|-------|------|--------|
+| CAR | Extrait le premier élément d'une liste | (CAR '(A B C)) --> A | [Sexp f_car(Sexp s);](https://github.com/jaypeeds/nanolispc/blob/01a8c48a98092db635071a66499a996343d8d1b8/NanoLisp.c#L165) |
+| CDR | Extrait la sous-liste après le premier élément | (CDR '(A B C)) --> (B C) | [Sexp f_cdr(Sexp s);](https://github.com/jaypeeds/nanolispc/blob/01a8c48a98092db635071a66499a996343d8d1b8/NanoLisp.c#L177)
+| CONS | Construit une liste, partant d'un atome et d'une liste. | (CONS 'A '(B C)) --> (A B C) | [Sexp f_cons(Sexp s1, Sexp s2);](https://github.com/jaypeeds/nanolispc/blob/01a8c48a98092db635071a66499a996343d8d1b8/NanoLisp.c#L240) |
+| SETQ | Assigne une valeur à un atome. | (SETQ A 1) --> A vaut 1 | [Sexp f_setq(Sexp s);](https://github.com/jaypeeds/nanolispc/blob/01a8c48a98092db635071a66499a996343d8d1b8/NanoLisp.c#L208) |
+| PRINT | Affiche la valeur d'un atome ou d'une liste | (PRINT A) --> Affiche 1, ne retourne rien| [Sexp f_print(Sexp s);](https://github.com/jaypeeds/nanolispc/blob/01a8c48a98092db635071a66499a996343d8d1b8/NanoLisp.c#L155) |
+|ATOM| Test d'atomicité.| (ATOM 1) --> T, (ATOM (1 2)) --> ()|[Sexp f_atom(Sexp s);](https://github.com/jaypeeds/nanolispc/blob/01a8c48a98092db635071a66499a996343d8d1b8/NanoLisp.c#L196)|
+|COND|Evaluation conditionnelle|(COND (L 'Non_Vide)(T 'Vide')) --> 'Non_Vide' si L est non vide, 'Vide sinon'|[Sexp f_cond(Sexp s);](https://github.com/jaypeeds/nanolispc/blob/01a8c48a98092db635071a66499a996343d8d1b8/NanoLisp.c#L257)|
+|DE|Lie un nom à une définition de fonction.|(DE DUP(X)(CONS X (CONS X) ())), (DUP 1)--> (1 1)|[Sexp f_de(Sexp s);](https://github.com/jaypeeds/nanolispc/blob/01a8c48a98092db635071a66499a996343d8d1b8/NanoLisp.c#L225)|
+|LOAD|Charge et interprète un fichier .nlsp|(LOAD 'Exemples/dbg-de.nlsp') --> Si le fichier ne se termine pas par (QUIT), rend la main à la console|[Sexp f_load(Sesxp s);](https://github.com/jaypeeds/nanolispc/blob/01a8c48a98092db635071a66499a996343d8d1b8/NanoLisp.c#L42)|
+|TRACE|Active les trace de debug|(TRACE)|[n/a](n/a)|
+|UNTRACE|Désactive les traces de debug|(UNTRACE)|[n/a](n/a)|
+|QUIT|Quitte l'interprète Nano Lisp|(QUIT)|[n/a](n/a)|
 
 ## Comment étendre le langage
 Pour assurer leur composabilité, dirait-on de nos jours, "monadique", toutes les fonctions exposables dans le langage doivent accepter des S-EXP en entrée et en sortie, le type Pascal SGRAPHE, elles sont nommées F-suivi du nom exposé: FCAR FCDR FCONS, etc.. Puis le nom exposé doit être ajouté dans la liste des tests, soit de EVAL, soit de APPLY. La fonction INIT permet d'enrichir le "dictionnaire" initial. La commande (OBLIST) permet de le lister.

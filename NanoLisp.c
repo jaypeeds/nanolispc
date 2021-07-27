@@ -97,7 +97,7 @@ Sexp f_eval(Sexp e) {
                 return f_cons(s, f_eval_each_item_of_list(f_cdr(e)));
             } else
                 if (strcmp(nameOfS, "QUOTE") == 0) { return f_car(f_cdr(e)); } else
-                if (strcmp(nameOfS, "COND") == 0) { return f_eval_cond(f_cdr(e)); } else
+                if (strcmp(nameOfS, "COND") == 0) { return f_cond(f_cdr(e)); } else
                 if (strcmp(nameOfS, "TRACE") == 0) { TRACE = true; return MUTE; } else
                 if (strcmp(nameOfS, "UNTRACE") == 0) { TRACE = false; return MUTE; } else
                 if (strcmp(nameOfS, "QUIT") == 0) { DONE = true; return MUTE; } else
@@ -254,12 +254,12 @@ Sexp f_cons(Sexp s1, Sexp s2) {
 }
 
 // Conditional evaluation
-Sexp f_eval_cond(Sexp s) {
+Sexp f_cond(Sexp s) {
     if (!NULLP(f_eval(f_car(f_car(s))))) {
         return f_eval_each_return_last_item_of_list(f_cdr(f_car(s)));
     } else {
         if (!NULLP(f_cdr(s))) {
-            return f_eval_cond(f_cdr(s));
+            return f_cond(f_cdr(s));
         }
     }
     return NIL;
