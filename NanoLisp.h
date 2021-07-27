@@ -12,10 +12,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <errno.h>
 
 #define BANNER "NanoLisp-V0.0.1 - by jpds - 2021\n"
 
 #define MAX_STRING_LENGTH 255
+#define LF      0x10
 #define SPC     0x20
 #define QUOTE_S 0x27
 #define PAREN_L '('
@@ -46,15 +48,16 @@
 #define NIL     GLOBAL_ENV._NIL
 #define QUOTE   GLOBAL_ENV._QUOTE
 #define LAMBDA  GLOBAL_ENV._LAMBDA
+#define MUTE    GLOBAL_ENV._MUTE
 
-#define BUFFER  GLOBAL_ENV._buffer
-#define INDEX   GLOBAL_ENV._index
+//#define BUFFER  GLOBAL_ENV._buffer
+//#define INDEX   GLOBAL_ENV._index
 #define S_CONSOLE GLOBAL_ENV._CONSOLE
 #define CONSOLE NAME_OF(S_CONSOLE)
 
-#define PROMPT1 "\tR> "
-#define PROMPT2 "E> "
-#define PROMPT3 "P> "
+#define PROMPT1 "\t" // \tR> "
+#define PROMPT2 "" // E> "
+#define PROMPT3 "" // P> "
 #define FMT_NO_SPC "%s"
 #define FMT_SPC "%s "
 
@@ -106,16 +109,22 @@ typedef struct struct_env {
     Sexp _QUOTE;
     Sexp _LAMBDA;
     Sexp _CONSOLE;
+    Sexp _MUTE;
 } env_t;
+
 extern env_t GLOBAL_ENV;
+extern unsigned int INDEX;
+extern char BUFFER[];
+extern Sexp ZERO, ONE, TWO, A, B, C, X, Y, Z;
 
 // Function prototypes
 
 // Utility functions
 int isNumeric (const char *s);
 void setup(void);
-void s_swap(Sexp s1, Sexp s2);
-void pair_list(Sexp names, Sexp values);
+void s_swap(Sexp *s1, Sexp *s2);
+void s_pair_list(Sexp *names, Sexp *values);
+Sexp clone(Sexp s);
 PtObList new_atom(PtObList position, String name);
 Sexp find_sexp2(const PtObList position, String name);
 Sexp find_sexp(String name);

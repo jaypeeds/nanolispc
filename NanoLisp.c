@@ -32,6 +32,7 @@ void setup(void) {
     current = new_atom(current, "LOAD");
     current = new_atom(current, "OBLIST");
     current = new_atom(current, "QUIT");
+    current = new_atom(current, ""); MUTE = current->info;
     S_CONSOLE = new_atom(NULL, "CONSOLE")->info;
 }
 
@@ -52,13 +53,16 @@ Sexp f_load(Sexp filename) {
             infile = stdin;
         } else {
             infile = fopen(file_name, "r");
+            if (!infile) {
+                perror("fopen");
+                return f_error(strerror(errno), filename);
+            }
         }
         printf("\n%s",PROMPT1);
         do {
             s1 = f_read(infile);
             printf("\n%s",PROMPT2);
             s2 = f_eval(s1);
-            // printf("\n%s",PROMPT3);
             f_print(s2);
             printf("\n%s", PROMPT1);
         } while (!(feof(infile)
@@ -93,16 +97,16 @@ Sexp f_eval(Sexp e) {
                 return f_cons(s, f_eval_each_item_of_list(f_cdr(e)));
             } else
                 if (strcmp(nameOfS, "QUOTE") == 0) { return f_car(f_cdr(e)); } else
-                if (strcmp(nameOfS, "TRACE") == 0) { TRACE = true; return NIL; } else
-                if (strcmp(nameOfS, "UNTRACE") == 0) { TRACE = false; return NIL; } else
-                if (strcmp(nameOfS, "QUIT") == 0) { DONE = true; return NIL; } else
-                if (strcmp(nameOfS, "OBLIST") == 0) { f_oblist(); return NIL; } else
+                if (strcmp(nameOfS, "TRACE") == 0) { TRACE = true; return MUTE; } else
+                if (strcmp(nameOfS, "UNTRACE") == 0) { TRACE = false; return MUTE; } else
+                if (strcmp(nameOfS, "QUIT") == 0) { DONE = true; return MUTE; } else
+                if (strcmp(nameOfS, "OBLIST") == 0) { f_oblist(); return MUTE; } else
                 if (strcmp(nameOfS, "SETQ") == 0) { return f_setq(f_cdr(e)); } else
                 if (strcmp(nameOfS, "DE") == 0) { return f_de(f_cdr(e)); } else
                 // Apply first item (as a function) to rest of items (as arguments)
                 return f_apply(s, f_eval_each_item_of_list(f_cdr(e)));
         }
-        return f_error("EVAL", e);
+        return f_apply(s, f_eval_each_item_of_list(f_cdr(e)));
     }
 }
 
@@ -119,21 +123,24 @@ Sexp f_apply(Sexp fn, Sexp args) {
     } else if (ATOMP(fn)) {
         if (strcmp(NAME_OF(fn), "CAR") == 0) { return f_car(f_car(args)); } else
         if (strcmp(NAME_OF(fn), "CDR") == 0) { return f_cdr(f_car(args)); } else
+        if (strcmp(NAME_OF(fn), "CONS") == 0) { return f_cons(f_car(args),f_car(f_cdr(args))); } else
         if (strcmp(NAME_OF(fn), "ATOM") == 0) { return f_atom(f_car(args)); } else
-        if (strcmp(NAME_OF(fn), "PRINT") == 0) { f_print(f_car(args)); return NIL; } else
+        if (strcmp(NAME_OF(fn), "LAST") == 0) { return f_eval_each_return_last_item_of_list(f_car(args)); } else
+        if (strcmp(NAME_OF(fn), "EVLIS") == 0) { return f_eval_each_item_of_list(f_car(args)); } else
+        if (strcmp(NAME_OF(fn), "PRINT") == 0) { f_print(f_car(args)); return MUTE; } else
         if (strcmp(NAME_OF(fn), "LOAD") == 0) {
-            if (QUOTEP(f_car(f_car(fn))))
+            if (QUOTEP(f_car(f_car(args))))
                 return f_load(f_car(f_cdr(f_car(args))));
             else
-                f_load(f_car(args));
+                return f_load(f_car(args));
         } else
-        return f_apply(f_eval(fn), args);
+            return f_apply(f_eval(fn), args);
     } else if (LISTP(fn)) {
         if (f_car(fn) == LAMBDA) {
             Sexp last;
-            pair_list(f_car(f_cdr(fn)), args);
+            s_pair_list(&(fn->unode.list->cdr->unode.list->car),&args);
             last = f_eval_each_return_last_item_of_list(f_cdr(f_cdr((fn))));
-            pair_list(f_car(f_cdr(fn)), args);
+            s_pair_list(&(fn->unode.list->cdr->unode.list->car),&args);
             return last;
         }
         if (f_car(fn) == QUOTE) {
@@ -162,7 +169,7 @@ Sexp f_car(Sexp s) {
         if (LISTP(s))
             return s->unode.list->car;
         else
-            if (NUMBERP(s))
+            if (ATOMP(s) || NUMBERP(s))
                 return s;
             else
                 return f_error("CAR", s);
@@ -253,6 +260,138 @@ void f_oblist(void) {
 }
 
 // Utility functions
+// Input
+Sexp read1(char buffer[], bool list_in_progress, FILE *source) {
+    Sexp new_symbol, r1, r2;
+    enum KindOfToken token;
+    new_symbol = read_atom(buffer, &token, source);
+    switch (token) {
+        case L_PAREN:
+            if (list_in_progress) {
+                r1 = read1(buffer, true, source);
+                r2 = read1(buffer, true, source);
+                return f_cons(r1, r2);
+            } else {
+                return read1(buffer, true, source);
+            }
+            break;
+        case R_PAREN:
+            return NIL;
+            break;
+        case S_QUOTE:
+            if (list_in_progress) {
+                r1=read1(buffer, false, source);
+                r2=read1(buffer, true, source);
+                return f_cons(f_cons(QUOTE,f_cons(r1, NIL)),r2);
+            } else {
+                r1=read1(buffer, false, source);
+                return f_cons(QUOTE, f_cons(r1, NIL));
+            }
+            break;
+        case SYMBOL:
+            if (list_in_progress) {
+                r1 = read1(buffer, true, source);
+                return f_cons(new_symbol, r1);
+            } else
+                return new_symbol;
+    }
+}
+//
+Sexp read_atom(char buffer[], enum KindOfToken *token, FILE *source) {
+    String new_name;
+    Sexp new_symbol;
+    char pad;
+    char *current_char;
+    bool sep_found;
+    
+    new_name = malloc(MAX_STRING_LENGTH);
+    current_char = new_name;
+    *current_char ='\0';
+    pad = SPC;
+    sep_found = false;
+    
+    if (buffer[0] == SPC) {
+        // Trim off spaces, line feeds, tabs
+        while (
+        (!feof(source))
+        && ((buffer[0] <= SPC)
+        || (buffer[0] > TILDE)) // UTF-8 scories
+        ) {
+            buffer[0] = read_one_char(source);
+        };
+        while (!(feof(source)
+        || (buffer[0] == PAREN_L)
+        || (buffer[0] == PAREN_R)
+        || (buffer[0] == QUOTE_S)
+        || (buffer[0] <= SPC)
+        || ((current_char - new_name) > MAX_STRING_LENGTH))) {
+            pad = buffer[0];
+            *current_char++ = pad;
+            buffer[0] = read_one_char(source);
+        };
+    };
+   
+    if (strlen(new_name) == 0) {
+        pad = buffer[0];
+        *current_char++ = pad;
+        buffer[0] = SPC;
+    }
+    // Terminate string;
+    *current_char ='\0';
+    new_symbol = NIL;
+    switch(*new_name) {
+        case PAREN_L:
+            *token = L_PAREN;
+            sep_found = true;
+            break;
+        case PAREN_R:
+            *token = R_PAREN;
+            sep_found = true;
+            break;
+        case QUOTE_S:
+            *token = S_QUOTE;
+            sep_found = true;
+            break;
+    }
+    if (!sep_found) {
+        *token = SYMBOL;
+        new_symbol = find_sexp(new_name);
+        if (NULLP(new_symbol))
+            new_symbol = new_atom(OBLIST, new_name)->info;
+    }
+    return new_symbol;
+}
+// Input routines
+char read_one_char(FILE *source) {
+    char ignored_cr;
+    int i;
+    INDEX++;
+    if (TRACE) {
+        printf("\n«%s»\n", BUFFER);
+        for (i = 0; i < INDEX; i++)
+            printf("%c",SPC);
+        printf(" ^\n");
+        for (i = 0; i < INDEX; i++)
+            printf("%c",SPC);
+        printf(" |\n");
+    }
+    if (INDEX == strlen(BUFFER)) {
+        return SPC;
+    } else if (INDEX > strlen(BUFFER)) {
+        if (feof(source)) {
+            fclose(source);
+            source = stdin;
+            INDEX = MAX_STRING_LENGTH;
+            return SPC;
+        }
+        // Read a new buffer
+        fscanf(source, "%s", BUFFER);
+        // Read and ignore the carriage return
+        INDEX = 0;
+        ignored_cr = fgetc(source);
+    }
+    return BUFFER[INDEX];
+}
 // Print out an atom's name
 void print_atom(Sexp s, String format) {
     printf(format, NAME_OF(s));
@@ -333,132 +472,7 @@ void obprint(const PtObList position) {
     }
 }
 
-Sexp read1(char buffer[], bool list_in_progress, FILE *source) {
-    Sexp new_symbol, r1, r2;
-    enum KindOfToken token;
-    new_symbol = read_atom(buffer, &token, source);
-    switch (token) {
-        case L_PAREN:
-            if (list_in_progress) {
-                r1 = read1(buffer, true, source);
-                r2 = read1(buffer, true, source);
-                return f_cons(r1, r2);
-            } else {
-                return read1(buffer, true, source);
-            }
-            break;
-        case R_PAREN:
-            return NIL;
-            break;
-        case S_QUOTE:
-            if (list_in_progress) {
-                r1=read1(buffer, false, source);
-                r2=read1(buffer, true, source);
-                return f_cons(f_cons(QUOTE,f_cons(r1, NIL)),r2);
-            } else {
-                r1=read1(buffer, false, source);
-                return f_cons(QUOTE, f_cons(r1, NIL));
-            }
-            break;
-        case SYMBOL:
-            if (list_in_progress) {
-                r1 = read1(buffer, true, source);
-                return f_cons(new_symbol, r1);
-            } else
-                return new_symbol;
-    }
-}
-//
-Sexp read_atom(char buffer[], enum KindOfToken *token, FILE *source) {
-    String new_name;
-    Sexp new_symbol;
-    char pad;
-    char *current_char;
-    bool sep_found;
-    
-    new_name = malloc(MAX_STRING_LENGTH);
-    current_char = new_name;
-    *current_char ='\0';
-    pad = SPC;
-    sep_found = false;
-    
-    if (buffer[0] == SPC) {
-        // Trim off spaces, line feeds, tabs
-        while (
-        !feof(source)
-        && ((buffer[0] <= SPC)
-        || (buffer[0] > TILDE)) // UTF-8 scories
-        ) {
-            buffer[0] = read_one_char(source);
-        };
-        while (!(feof(source)
-        || (buffer[0] == PAREN_L)
-        || (buffer[0] == PAREN_R)
-        || (buffer[0] == QUOTE_S)
-        || (buffer[0] <= SPC)
-        || ((current_char - new_name) > MAX_STRING_LENGTH))) {
-            pad = buffer[0];
-            *current_char++ = pad;
-            buffer[0] = read_one_char(source);
-        };
-    };
-   
-    if (strlen(new_name) == 0) {
-        pad = buffer[0];
-        *current_char++ = pad;
-        buffer[0] = SPC;
-    }
-    // Terminate string;
-    *current_char ='\0';
-    new_symbol = NIL;
-    switch(*new_name) {
-        case PAREN_L:
-            *token = L_PAREN;
-            sep_found = true;
-            break;
-        case PAREN_R:
-            *token = R_PAREN;
-            sep_found = true;
-            break;
-        case QUOTE_S:
-            *token = S_QUOTE;
-            sep_found = true;
-            break;
-    }
-    if (!sep_found) {
-        *token = SYMBOL;
-        new_symbol = find_sexp(new_name);
-        if (NULLP(new_symbol))
-            new_symbol = new_atom(OBLIST, new_name)->info;
-    }
-    return new_symbol;
-}
-// Input routines
-char read_one_char(FILE *source) {
-    char ignored_cr;
-    int i;
-    INDEX++;
-    if (TRACE) {
-        printf("\n«%s»\n", BUFFER);
-        for (i = 0; i < INDEX; i++)
-            printf("%c",SPC);
-        printf(" ^\n");
-        for (i = 0; i < INDEX; i++)
-            printf("%c",SPC);
-        printf(" |\n");
-    }
-    if (INDEX == strlen(BUFFER)) {
-        return SPC;
-    }
-    else if (INDEX > strlen(BUFFER)) {
-        // Read a new buffer
-        fscanf(source, "%s", BUFFER);
-        // Read and ignore the carriage return
-        ignored_cr = fgetc(source);
-        INDEX = 0;
-    }
-    return toupper(BUFFER[INDEX]);
-}
+
 // Search in given sexp list
 Sexp find_sexp2(const PtObList position, String name) {
     PtObList current;
@@ -487,35 +501,36 @@ Sexp f_eval_each_item_of_list(Sexp args) {
 
 // Last in evals of each item in a list
 Sexp f_eval_each_return_last_item_of_list(Sexp s) {
-    Sexp e;
+    Sexp eval, sexp;
     if (NULLP(s))
         return NIL;
     else {
-        do {
-            e = f_eval(s);
-            s = f_cdr(s);
-        } while (e != NIL);
+        eval = NIL;
+        for (sexp = s;!(ERROR || (sexp == NIL)); sexp = f_cdr(sexp))
+            eval = f_eval(f_car(sexp));
+        return eval;
     }
-    return e;
 }
 
 // swap values of 2 Sexps
-void s_swap(Sexp s1, Sexp s2) {
+void s_swap(Sexp *s1, Sexp *s2) {
     Sexp temp;
-    temp = s1;
-    s1 = s2;
-    s2 = temp;
+    temp = *s1;
+    *s1 = *s2;
+    *s2 = temp;
 }
 // Used only for LAMBDA evaluation,
 // to inject actual values into formal arguments
-void pair_list(Sexp names, Sexp values) {
+void s_pair_list(Sexp *names, Sexp *values) {
     if (ERROR)
         return;
-    else if (LISTP(names)) {
-        pair_list(f_cdr(names), f_cdr(values));
-        s_swap(f_car(names), f_car(values));
-    } else if (! NULLP(names)) {
-        s_swap(VALUE_OF(names), values);
+    if (LISTP(*names)) {
+        s_pair_list(&((*names)->unode.list->cdr), &((*values)->unode.list->cdr));
+        s_swap(&((*names)->unode.list->car->unode.atom->val), &((*values)->unode.list->car));
+    } else {
+        if (!NULLP(*names)) {
+            s_swap(&((*names)->unode.atom->val), values);
+        }
     }
 }
 // Exception routine
