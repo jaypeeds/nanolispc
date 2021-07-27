@@ -53,6 +53,11 @@ Les conventions de nommage ont été rendues plus strictes: Les primitives sont 
 |UNTRACE|Désactive les traces de debug|(UNTRACE)|[n/a](n/a)|
 |QUIT|Quitte l'interprète Nano Lisp|(QUIT)|[n/a](n/a)|
 
+## Build
+```
+gcc -o NanoLisp NanoLisp.c main.c
+```
+
 ## Comment étendre le langage
 Pour assurer leur composabilité, dirait-on de nos jours, "monadique", toutes les fonctions exposables dans le langage doivent accepter des S-EXP en entrée et en sortie, le type Pascal SGRAPHE, elles sont nommées F-suivi du nom exposé: FCAR FCDR FCONS, etc.. Puis le nom exposé doit être ajouté dans la liste des tests, soit de EVAL, soit de APPLY. La fonction INIT permet d'enrichir le "dictionnaire" initial. La commande (OBLIST) permet de le lister.
 
