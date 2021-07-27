@@ -40,7 +40,6 @@ void setup(void) {
 
 // THE "READ" FUNCTION
 Sexp f_load(Sexp filename) {
-    FILE *infile;
     String file_name;
     Sexp s1, s2;
     
@@ -50,25 +49,25 @@ Sexp f_load(Sexp filename) {
     }
     if (ATOMP(filename) && !NULLP(filename)) {
         if (strcmp(file_name, CONSOLE) == 0) {
-            infile = stdin;
+            SOURCE = stdin;
         } else {
-            infile = fopen(file_name, "r");
-            if (!infile) {
+            SOURCE = fopen(file_name, "r");
+            if (!SOURCE) {
                 perror("fopen");
                 return error(strerror(errno), filename);
             }
         }
         printf("\n%s",PROMPT1);
         do {
-            s1 = f_read(infile);
+            s1 = f_read(SOURCE);
             printf("\n%s",PROMPT2);
             s2 = f_eval(s1);
             f_print(s2);
             printf("\n%s", PROMPT1);
-        } while (!(feof(infile)
+        } while (!(feof(SOURCE)
                 || ERROR
                 || DONE));
-        fclose(infile);
+        fclose(SOURCE);
         return T;
     } else {
         return error("LOAD", filename);
@@ -104,6 +103,7 @@ Sexp f_eval(Sexp e) {
                 if (strcmp(nameOfS, "OBLIST") == 0) { f_oblist(); return MUTE; } else
                 if (strcmp(nameOfS, "SETQ") == 0) { return f_setq(f_cdr(e)); } else
                 if (strcmp(nameOfS, "DE") == 0) { return f_de(f_cdr(e)); } else
+                if (strcmp(nameOfS, "READ") == 0) { return f_read(SOURCE); } else
                 // Apply first item (as a function) to rest of items (as arguments)
                 return f_apply(s, f_eval_each_item_of_list(f_cdr(e)));
         }

@@ -51,6 +51,7 @@
 #define BUFFER  GLOBAL_ENV._buffer
 #define INDEX   GLOBAL_ENV._index
 #define S_CONSOLE GLOBAL_ENV._CONSOLE
+#define SOURCE  GLOBAL_ENV._source
 #define CONSOLE NAME_OF(S_CONSOLE)
 
 #define PROMPT1 "\t" 
@@ -102,6 +103,7 @@ typedef struct struct_env {
     PtObList _oblist;
     unsigned int _index;
     char _buffer[MAX_STRING_LENGTH];
+    FILE *_source;
     Sexp _NIL;
     Sexp _T;
     Sexp _QUOTE;
