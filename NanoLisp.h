@@ -37,8 +37,6 @@
 
 #define NAME_OF(s)  ((s)->unode.atom->name)
 #define VALUE_OF(s) ((s)->unode.atom->val)
-//#define CAR_OF(s)   ((s)->unode.list->car)
-//#define CDR_OF(s)   ((s)->unode.list->cdr)
 
 #define TRACE GLOBAL_ENV._trace
 #define ERROR GLOBAL_ENV._error
@@ -50,14 +48,14 @@
 #define LAMBDA  GLOBAL_ENV._LAMBDA
 #define MUTE    GLOBAL_ENV._MUTE
 
-//#define BUFFER  GLOBAL_ENV._buffer
-//#define INDEX   GLOBAL_ENV._index
+#define BUFFER  GLOBAL_ENV._buffer
+#define INDEX   GLOBAL_ENV._index
 #define S_CONSOLE GLOBAL_ENV._CONSOLE
 #define CONSOLE NAME_OF(S_CONSOLE)
 
-#define PROMPT1 "\t" // \tR> "
-#define PROMPT2 "" // E> "
-#define PROMPT3 "" // P> "
+#define PROMPT1 "\t" 
+#define PROMPT2 "" 
+#define PROMPT3 "" 
 #define FMT_NO_SPC "%s"
 #define FMT_SPC "%s "
 
@@ -113,9 +111,8 @@ typedef struct struct_env {
 } env_t;
 
 extern env_t GLOBAL_ENV;
-extern unsigned int INDEX;
-extern char BUFFER[];
-extern Sexp ZERO, ONE, TWO, A, B, C, X, Y, Z;
+//extern unsigned int INDEX;
+//extern char BUFFER[];
 
 // Function prototypes
 
