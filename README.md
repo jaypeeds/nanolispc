@@ -25,17 +25,7 @@ Si on considère le fait que la plupart des implémentations initiales de Lisp o
 
 ## Le bilan de la restauration
 Il a fallu faire des ajustements, l'interpréte ne lisait pas la console mais un fichier source conventionnel SOURCE.NLSP. Mais ce n'est plus le cas depuis que la console es opérationnelle. La plupart des fonctions, notamment la création et la définition de fonctions par l'utilisateur, sont opérationnelles.
-Les conventions de nommage ont été rendues plus strictes: Les primitives sont nommées F suivi de la primitive : f_car, f_cdr mais pour être exploitables, ces opérateurs devraient tous avoir un résultat de type S-Exp, ou SGRAPHE dans ce code. FNULL ne respectait pas cette convention et renvoyait un booléen du langage hôte inexploittable par l'interprète.
-
-## Et ensuite ?
-- Implémenter l'arithmétique entière. Fait (en réel aussi) !
-- Permettre la lecture à la console. Fait (la lecture de fichier aussi) !
-- Fonctions mathématiques et trigo en degrés. Voir Exemples/test-maths.nlsp. Fait !
-- Boucles. Possibles grâce à EVAL. Voir Exemples/test-boucle.nlsp
-- Liste de propriétés (property list). Voir Exemples/test-prop.nslp.
-- Porter en C simple. A faire !
-- Permettre des commentaires pour documenter le code. A faire !
-- Gestion plus grâcieuse des erreurs. A faire !
+Les conventions de nommage ont été rendues plus strictes: Les primitives sont nommées F suivi de la primitive : f_car, f_cdr mais pour être exploitables, ces opérateurs devraient tous avoir un résultat de type S-Exp, ou SGRAPHE dans ce code. FNULL ne respectait pas cette convention et renvoyait un booléen du langage hôte inexploitable par l'interprète.
 
 ## Petit guide du langage
 | Fonction | Description | Exemple | Code C |
@@ -53,6 +43,16 @@ Les conventions de nommage ont été rendues plus strictes: Les primitives sont 
 |TRACE|Active les trace de debug|(TRACE)|[n/a](n/a)|
 |UNTRACE|Désactive les traces de debug|(UNTRACE)|[n/a](n/a)|
 |QUIT|Quitte l'interprète Nano Lisp|(QUIT)|[n/a](n/a)|
+
+## La TO DO list
+- Implémenter l'arithmétique entière et réelle.
+- Permettre la lecture à la console. (SETQ A (READ)) !
+- Fonctions mathématiques et trigo en degrés.
+- Boucles. Possibles grâce à EVAL. Voir Exemples/test-boucle.nlsp
+- Liste de propriétés (property list). Voir Exemples/test-prop.nslp.
+- Permettre des commentaires pour documenter le code. A faire !
+- Gestion plus grâcieuse des erreurs. A faire !
+
 
 ## Comment étendre le langage
 Pour assurer leur composabilité, dirait-on de nos jours, "monadique", toutes les fonctions exposables dans le langage doivent accepter des S-EXP en entrée et en sortie, le type Pascal SGRAPHE, elles sont nommées F-suivi du nom exposé: FCAR FCDR FCONS, etc.. Puis le nom exposé doit être ajouté dans la liste des tests, soit de EVAL, soit de APPLY. La fonction INIT permet d'enrichir le "dictionnaire" initial. La commande (OBLIST) permet de le lister.
