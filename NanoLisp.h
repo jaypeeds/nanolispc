@@ -1,12 +1,12 @@
 //
-//  NanoLogo.h
-//  nanoLogo
+//  NanoLisp.h
+//  nanoLisp
 //
 //  Created by Jean-Pierre De Soza on 15/07/2021.
 //
 
-#ifndef NanoLogo_h
-#define NanoLogo_h
+#ifndef NanoLisp_h
+#define NanoLisp_h
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -152,4 +152,4 @@ void obprint(const PtObList start);
 char read_one_char(FILE *source);
 Sexp read_atom(char buffer[], enum KindOfToken *token, FILE *source);
 Sexp read1(char buffer[], bool list_in_progress, FILE *source);
-#endif /* NanoLogo_h */
+#endif /* NanoLisp_h */
