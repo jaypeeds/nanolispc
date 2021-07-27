@@ -46,17 +46,14 @@ Les conventions de nommage ont été rendues plus strictes: Les primitives sont 
 | SETQ | Assigne une valeur à un atome. | (SETQ A 1) --> A vaut 1 | [Sexp f_setq(Sexp s);](https://github.com/jaypeeds/nanolispc/blob/01a8c48a98092db635071a66499a996343d8d1b8/NanoLisp.c#L208) |
 | PRINT | Affiche la valeur d'un atome ou d'une liste | (PRINT A) --> Affiche 1, ne retourne rien| [Sexp f_print(Sexp s);](https://github.com/jaypeeds/nanolispc/blob/01a8c48a98092db635071a66499a996343d8d1b8/NanoLisp.c#L155) |
 |ATOM| Test d'atomicité.| (ATOM 1) --> T, (ATOM (1 2)) --> ()|[Sexp f_atom(Sexp s);](https://github.com/jaypeeds/nanolispc/blob/01a8c48a98092db635071a66499a996343d8d1b8/NanoLisp.c#L196)|
-|COND|Evaluation conditionnelle|(COND (L 'Non_Vide)(T 'Vide')) --> 'Non_Vide' si L est non vide, 'Vide sinon'. L'évaluation s'arrête à la première clause évaluée comme vraie. La valeur de la dernière expression est retournée.|[Sexp f_cond(Sexp s);](https://github.com/jaypeeds/nanolispc/blob/01a8c48a98092db635071a66499a996343d8d1b8/NanoLisp.c#L257)|
+|COND|Evaluation conditionnelle|(COND (L 'Non_Vide)(T 'Vide')) --> 'Non_Vide' si L est non vide, 'Vide sinon'|[Sexp f_cond(Sexp s);](https://github.com/jaypeeds/nanolispc/blob/01a8c48a98092db635071a66499a996343d8d1b8/NanoLisp.c#L257)|
 |DE|Lie un nom à une définition de fonction.|(DE DUP(X)(CONS X (CONS X) ())), (DUP 1)--> (1 1)|[Sexp f_de(Sexp s);](https://github.com/jaypeeds/nanolispc/blob/01a8c48a98092db635071a66499a996343d8d1b8/NanoLisp.c#L225)|
 |LOAD|Charge et interprète un fichier .nlsp|(LOAD 'Exemples/dbg-de.nlsp') --> Si le fichier ne se termine pas par (QUIT), rend la main à la console|[Sexp f_load(Sesxp s);](https://github.com/jaypeeds/nanolispc/blob/01a8c48a98092db635071a66499a996343d8d1b8/NanoLisp.c#L42)|
-|TRACE|Active les traces de debug|(TRACE)|[n/a](n/a)|
+|OBLIST|Liste tous les atomes définis|(OBLIST) --> 	() T QUOTE CAR CDR CONS LAMBDA ATOM READ PRINT COND TRACE UNTRACE SETQ LOAD OBLIST QUIT  
+|[void f_oblist(void)](https://github.com/jaypeeds/nanolispc/blob/91d7d358d2f6d6de99c6640a6f81e102870319d4/NanoLisp.c#L268)|
+|TRACE|Active les trace de debug|(TRACE)|[n/a](n/a)|
 |UNTRACE|Désactive les traces de debug|(UNTRACE)|[n/a](n/a)|
 |QUIT|Quitte l'interprète Nano Lisp|(QUIT)|[n/a](n/a)|
-
-## Build
-```
-gcc -o NanoLisp NanoLisp.c main.c
-```
 
 ## Comment étendre le langage
 Pour assurer leur composabilité, dirait-on de nos jours, "monadique", toutes les fonctions exposables dans le langage doivent accepter des S-EXP en entrée et en sortie, le type Pascal SGRAPHE, elles sont nommées F-suivi du nom exposé: FCAR FCDR FCONS, etc.. Puis le nom exposé doit être ajouté dans la liste des tests, soit de EVAL, soit de APPLY. La fonction INIT permet d'enrichir le "dictionnaire" initial. La commande (OBLIST) permet de le lister.
