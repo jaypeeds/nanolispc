@@ -68,6 +68,7 @@ Sexp f_load(Sexp filename) {
                 || ERROR
                 || DONE));
         fclose(SOURCE);
+        SOURCE = stdin;
         return T;
     } else {
         return error("LOAD", filename);
@@ -129,6 +130,7 @@ Sexp f_apply(Sexp fn, Sexp args) {
         if (strcmp(NAME_OF(fn), "ATOM") == 0) { return f_atom(f_car(args)); } else
         if (strcmp(NAME_OF(fn), "LIST") == 0) { return f_eval_list(args); } else
         if (strcmp(NAME_OF(fn), "PRINT") == 0) { f_print(f_car(args)); return MUTE; } else
+        if (strcmp(NAME_OF(fn), "PRINTLN") == 0) { f_print(f_car(args)); printf("\n");return MUTE; } else
         if (strcmp(NAME_OF(fn), "EVAL") == 0) {
             if (QUOTEP(f_car(f_car(args))))
                 return f_eval(f_car(f_cdr(f_car(args))));
