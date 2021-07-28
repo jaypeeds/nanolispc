@@ -41,7 +41,7 @@ Les conventions de nommage ont été rendues plus strictes: Les primitives sont 
 |LOAD|Charge et interprète un fichier .nlsp|(LOAD 'Exemples/dbg-de.nlsp') --> Si le fichier ne se termine pas par (QUIT), rend la main à la console|[Sexp f_load(Sesxp s);](https://github.com/jaypeeds/nanolispc/blob/01a8c48a98092db635071a66499a996343d8d1b8/NanoLisp.c#L42)|
 |READ|Lit une valeur à la console|(SETQ A (READ)) --> A vaut ce qui a été saisi|[Sexp f_read(FILE * source); utiliser la globale SOURCE](https://github.com/jaypeeds/nanolispc/blob/ae54b383dfb019045833e3f27b8bf962733b2838/NanoLisp.c#L190)|
 |LIST|Crée une liste avec le reste de la liste|(LIST 1 2 3)-->(1 2 3)|[Sexp f_eval_list(Sexp s);](https://github.com/jaypeeds/nanolispc/blob/6e64eba00641a0f193841716a9c712271d455e96/NanoLisp.c#L505)|
-|EVAL|Evalue l'expression introduite pas une apostrophe|(EVAL '(OBLIST)) --> Equivalent à (OBLIST)|[Sexp f_evel(Sexp s);](https://github.com/jaypeeds/nanolispc/blob/3308e809b63b3e67f3e3265c0a475c0988871d70/NanoLisp.c#L527)|
+|EVAL|Evalue l'expression introduite pas une apostrophe|(EVAL '(OBLIST)) --> Equivalent à (OBLIST)|[Sexp f_eval(Sexp s);](https://github.com/jaypeeds/nanolispc/blob/3308e809b63b3e67f3e3265c0a475c0988871d70/NanoLisp.c#L527)|
 |OBLIST|Liste tous les atomes définis|(OBLIST) --> 	() T QUOTE CAR CDR CONS LAMBDA ATOM READ PRINT COND TRACE UNTRACE SETQ LOAD OBLIST QUIT|[void f_oblist(void)](https://github.com/jaypeeds/nanolispc/blob/91d7d358d2f6d6de99c6640a6f81e102870319d4/NanoLisp.c#L268)|
 |TRACE|Active les trace de debug|(TRACE)|[n/a](n/a)|
 |UNTRACE|Désactive les traces de debug|(UNTRACE)|[n/a](n/a)|
