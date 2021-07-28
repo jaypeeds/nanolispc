@@ -53,7 +53,6 @@ Sexp f_load(Sexp filename) {
         } else {
             SOURCE = fopen(file_name, "r");
             if (!SOURCE) {
-                perror("fopen");
                 return error(strerror(errno), filename);
             }
         }

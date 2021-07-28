@@ -141,8 +141,9 @@ Sexp f_eval(Sexp s);
 Sexp f_apply(Sexp fn, Sexp args);
 Sexp f_atom(Sexp s);
 Sexp f_cond(Sexp s);
-// Could be but are not exposed
 Sexp f_eval_list(Sexp s);
+
+// Could be but is not exposed
 Sexp f_eval_list_return_last(Sexp s);
 
 // Error routine
