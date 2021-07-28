@@ -93,7 +93,7 @@ Sexp f_eval(Sexp e) {
         nameOfS = NAME_OF(s);
         if (ATOMP(s)) {
             if (NUMBERP(s) || VARIABLEP(s)) {
-                return f_cons(s, f_eval_each_item_of_list(f_cdr(e)));
+                return f_cons(s, f_eval_list(f_cdr(e)));
             } else
                 if (strcmp(nameOfS, "QUOTE") == 0) { return f_car(f_cdr(e)); } else
                 if (strcmp(nameOfS, "COND") == 0) { return f_cond(f_cdr(e)); } else
@@ -105,9 +105,9 @@ Sexp f_eval(Sexp e) {
                 if (strcmp(nameOfS, "DE") == 0) { return f_de(f_cdr(e)); } else
                 if (strcmp(nameOfS, "READ") == 0) { return f_read(SOURCE); } else
                 // Apply first item (as a function) to rest of items (as arguments)
-                return f_apply(s, f_eval_each_item_of_list(f_cdr(e)));
+                return f_apply(s, f_eval_list(f_cdr(e)));
         }
-        return f_apply(s, f_eval_each_item_of_list(f_cdr(e)));
+        return f_apply(s, f_eval_list(f_cdr(e)));
     }
 }
 
@@ -127,7 +127,14 @@ Sexp f_apply(Sexp fn, Sexp args) {
         if (strcmp(NAME_OF(fn), "CONS") == 0) { return f_cons(f_car(args),f_car(f_cdr(args))); } else
         if (strcmp(NAME_OF(fn), "EQ") == 0) { return f_eq(f_car(args), f_car(f_cdr(args))); } else
         if (strcmp(NAME_OF(fn), "ATOM") == 0) { return f_atom(f_car(args)); } else
+        if (strcmp(NAME_OF(fn), "LIST") == 0) { return f_eval_list(args); } else
         if (strcmp(NAME_OF(fn), "PRINT") == 0) { f_print(f_car(args)); return MUTE; } else
+        if (strcmp(NAME_OF(fn), "EVAL") == 0) {
+            if (QUOTEP(f_car(f_car(args))))
+                return f_eval(f_car(f_cdr(f_car(args))));
+            else
+                return f_eval(f_car(args));
+        } else
         if (strcmp(NAME_OF(fn), "LOAD") == 0) {
             if (QUOTEP(f_car(f_car(args))))
                 return f_load(f_car(f_cdr(f_car(args))));
@@ -139,7 +146,7 @@ Sexp f_apply(Sexp fn, Sexp args) {
         if (f_car(fn) == LAMBDA) {
             Sexp last;
             s_pair_list(&(fn->unode.list->cdr->unode.list->car),&args);
-            last = f_eval_each_return_last_item_of_list(f_cdr(f_cdr((fn))));
+            last = f_eval_list_return_last(f_cdr(f_cdr((fn))));
             s_pair_list(&(fn->unode.list->cdr->unode.list->car),&args);
             return last;
         }
@@ -209,7 +216,7 @@ Sexp f_setq(Sexp s) {
     Sexp variable, values, temp_values;
     variable = f_car(s);
     values = f_cdr(s);
-    temp_values = f_eval_each_item_of_list(values);
+    temp_values = f_eval_list(values);
     if (ATOMP(variable) && !NULLP(variable)) {
         VALUE_OF(variable) = f_car(temp_values);
         DBG_TRACE(printf("\nSETQ %s <- ",NAME_OF(variable)));
@@ -256,7 +263,7 @@ Sexp f_cons(Sexp s1, Sexp s2) {
 // Conditional evaluation
 Sexp f_cond(Sexp s) {
     if (!NULLP(f_eval(f_car(f_car(s))))) {
-        return f_eval_each_return_last_item_of_list(f_cdr(f_car(s)));
+        return f_eval_list_return_last(f_cdr(f_car(s)));
     } else {
         if (!NULLP(f_cdr(s))) {
             return f_cond(f_cdr(s));
@@ -305,6 +312,11 @@ Sexp read1(char buffer[], bool list_in_progress, FILE *source) {
                 return f_cons(new_symbol, r1);
             } else
                 return new_symbol;
+            break;
+        case COMMENT:
+            ignore_end_of_line(source);
+            return MUTE;
+            break;
     }
 }
 //
@@ -334,6 +346,7 @@ Sexp read_atom(char buffer[], enum KindOfToken *token, FILE *source) {
         || (buffer[0] == PAREN_L)
         || (buffer[0] == PAREN_R)
         || (buffer[0] == QUOTE_S)
+        || (buffer[0] == SMC)
         || (buffer[0] <= SPC)
         || ((current_char - new_name) > MAX_STRING_LENGTH))) {
             pad = buffer[0];
@@ -361,6 +374,10 @@ Sexp read_atom(char buffer[], enum KindOfToken *token, FILE *source) {
             break;
         case QUOTE_S:
             *token = S_QUOTE;
+            sep_found = true;
+            break;
+        case SMC:
+            *token = COMMENT;
             sep_found = true;
             break;
     }
@@ -402,6 +419,11 @@ char read_one_char(FILE *source) {
         ignored_cr = fgetc(source);
     }
     return BUFFER[INDEX];
+}
+
+// Read and discard input to the end of line, only used for comments.
+void ignore_end_of_line(FILE *source) {
+    while (fgetc(source) >= SPC);
 }
 // Print out an atom's name
 void print_atom(Sexp s, String format) {
@@ -502,16 +524,16 @@ Sexp find_sexp(String name) {
 }
 
 // List of evals of each item in a list
-Sexp f_eval_each_item_of_list(Sexp args) {
+Sexp f_eval_list(Sexp args) {
     if (NULLP(args))
         return NIL;
     else {
-        return f_cons(f_eval(f_car(args)), f_eval_each_item_of_list(f_cdr(args)));
+        return f_cons(f_eval(f_car(args)), f_eval_list(f_cdr(args)));
     }
 }
 
 // Last in evals of each item in a list
-Sexp f_eval_each_return_last_item_of_list(Sexp s) {
+Sexp f_eval_list_return_last(Sexp s) {
     Sexp eval, sexp;
     if (NULLP(s))
         return NIL;

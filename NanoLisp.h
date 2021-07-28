@@ -20,6 +20,7 @@
 #define LF      0x10
 #define SPC     0x20
 #define QUOTE_S 0x27
+#define SMC     ';'
 #define PAREN_L '('
 #define PAREN_R ')'
 #define TILDE   '~'
@@ -69,7 +70,7 @@ typedef struct struct_env* Env;
 typedef char* String;
 
 enum KindOfNode {ATOM, LIST};
-enum KindOfToken {L_PAREN, R_PAREN, S_QUOTE, SYMBOL};
+enum KindOfToken {L_PAREN, R_PAREN, S_QUOTE, SYMBOL, COMMENT};
 
 typedef struct struct_atom {
     String name;
@@ -141,8 +142,8 @@ Sexp f_apply(Sexp fn, Sexp args);
 Sexp f_atom(Sexp s);
 Sexp f_cond(Sexp s);
 // Could be but are not exposed
-Sexp f_eval_each_item_of_list(Sexp s);
-Sexp f_eval_each_return_last_item_of_list(Sexp s);
+Sexp f_eval_list(Sexp s);
+Sexp f_eval_list_return_last(Sexp s);
 
 // Error routine
 Sexp error(String message, Sexp origin);
@@ -156,4 +157,5 @@ void obprint(const PtObList start);
 char read_one_char(FILE *source);
 Sexp read_atom(char buffer[], enum KindOfToken *token, FILE *source);
 Sexp read1(char buffer[], bool list_in_progress, FILE *source);
+void ignore_end_of_line(FILE *source);
 #endif /* NanoLisp_h */
