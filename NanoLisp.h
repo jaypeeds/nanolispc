@@ -13,6 +13,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <errno.h>
+#include <math.h>
 
 #define BANNER "NanoLisp-V0.0.1 - by jpds - 2021\n"
 
@@ -43,16 +44,18 @@
 #define ERROR GLOBAL_ENV._error
 #define DONE GLOBAL_ENV._done
 #define OBLIST  GLOBAL_ENV._oblist
-#define T       GLOBAL_ENV._T
-#define NIL     GLOBAL_ENV._NIL
-#define QUOTE   GLOBAL_ENV._QUOTE
-#define LAMBDA  GLOBAL_ENV._LAMBDA
-#define MUTE    GLOBAL_ENV._MUTE
+#define T       GLOBAL_ENV._true
+#define NIL     GLOBAL_ENV._nil
+#define QUOTE   GLOBAL_ENV._quote
+#define LAMBDA  GLOBAL_ENV._lambda
+#define MUTE    GLOBAL_ENV._mute
 
 #define BUFFER  GLOBAL_ENV._buffer
 #define INDEX   GLOBAL_ENV._index
-#define S_CONSOLE GLOBAL_ENV._CONSOLE
+#define S_CONSOLE GLOBAL_ENV._console
 #define SOURCE  GLOBAL_ENV._source
+#define EPSILON GLOBAL_ENV._epsilon
+
 #define CONSOLE NAME_OF(S_CONSOLE)
 
 #define PROMPT1 "\t" 
@@ -71,6 +74,9 @@ typedef char* String;
 
 enum KindOfNode {ATOM, LIST};
 enum KindOfToken {L_PAREN, R_PAREN, S_QUOTE, SYMBOL, COMMENT};
+enum ArithmOp { PLUS, MINUS, MULT, DIV };
+enum CompOp { EQU, NEQU, GT, LT, GE, LE };
+
 
 typedef struct struct_atom {
     String name;
@@ -104,21 +110,27 @@ typedef struct struct_env {
     PtObList _oblist;
     unsigned int _index;
     char _buffer[MAX_STRING_LENGTH];
+    float _epsilon;
     FILE *_source;
-    Sexp _NIL;
-    Sexp _T;
-    Sexp _QUOTE;
-    Sexp _LAMBDA;
-    Sexp _CONSOLE;
-    Sexp _MUTE;
+    Sexp _nil;
+    Sexp _true;
+    Sexp _quote;
+    Sexp _lambda;
+    Sexp _console;
+    Sexp _mute;
+    Sexp _zero;
+    Sexp _one;
 } env_t;
 
 extern env_t GLOBAL_ENV;
+extern Sexp ZERO;
+extern Sexp ONE;
 
 // Function prototypes
 
 // Utility functions
 int isNumeric (const char *s);
+bool is_long_integer(double d);
 void setup(void);
 void s_swap(Sexp *s1, Sexp *s2);
 void s_pair_list(Sexp *names, Sexp *values);
@@ -142,6 +154,13 @@ Sexp f_apply(Sexp fn, Sexp args);
 Sexp f_atom(Sexp s);
 Sexp f_cond(Sexp s);
 Sexp f_eval_list(Sexp s);
+
+// Arithmetics and Mathematics
+Sexp f_opari(enum ArithmOp op, const Sexp s);
+Sexp f_add(const Sexp s);
+Sexp f_sub(const Sexp s);
+Sexp f_mult(const Sexp s);
+Sexp f_div(const Sexp s);
 
 // Could be but is not exposed
 Sexp f_eval_list_return_last(Sexp s);

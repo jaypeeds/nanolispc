@@ -9,6 +9,7 @@
 #include "NanoLisp.h"
 
 env_t GLOBAL_ENV;
+Sexp ZERO, ONE;
 //unsigned int INDEX;
 //char BUFFER[MAX_STRING_LENGTH];
 

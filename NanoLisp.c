@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <stdlib.h>
+#include <math.h>
 #include "NanoLisp.h"
 
 // Setup of environment
@@ -33,7 +34,10 @@ void setup(void) {
     current = new_atom(current, "OBLIST");
     current = new_atom(current, "QUIT");
     current = new_atom(current, ""); MUTE = current->info;
+    current = new_atom(current, "0"); ZERO = current -> info;
+    current = new_atom(current, "1"); ONE = current->info;
     S_CONSOLE = new_atom(NULL, "CONSOLE")->info;
+    EPSILON = 1.0e-12;
 }
 
 // Interfaceable functions based on Sexp (some could be macros)
@@ -128,6 +132,10 @@ Sexp f_apply(Sexp fn, Sexp args) {
         if (strcmp(NAME_OF(fn), "EQ") == 0) { return f_eq(f_car(args), f_car(f_cdr(args))); } else
         if (strcmp(NAME_OF(fn), "ATOM") == 0) { return f_atom(f_car(args)); } else
         if (strcmp(NAME_OF(fn), "LIST") == 0) { return f_eval_list(args); } else
+        if (strcmp(NAME_OF(fn), "+") == 0) { return f_add(f_eval_list(args)); } else
+        if (strcmp(NAME_OF(fn), "-") == 0) { return f_sub(f_eval_list(args)); } else
+        if (strcmp(NAME_OF(fn), "*") == 0) { return f_mult(f_eval_list(args)); } else
+        if (strcmp(NAME_OF(fn), "/") == 0) { return f_div(f_eval_list(args)); } else
         if (strcmp(NAME_OF(fn), "PRINT") == 0) { f_print(f_car(args)); return MUTE; } else
         if (strcmp(NAME_OF(fn), "PRINTLN") == 0) { f_print(f_car(args)); printf("\n");return MUTE; } else
         if (strcmp(NAME_OF(fn), "EVAL") == 0) {
@@ -189,7 +197,7 @@ Sexp f_cdr(Sexp s) {
         if (LISTP(s))
             return s->unode.list->cdr;
         else
-            if (NUMBERP(s))
+            if (NUMBERP(s) || AUTOEVAL(s))
                 return NIL;
             else
                 return error("CDR", s);
@@ -278,7 +286,109 @@ void f_oblist(void) {
     printf("\n");
 }
 
+// ARITHMETICS & MATHEMATICS
+
+Sexp f_opari(enum ArithmOp op, Sexp s) {
+    double d0, d1, resultd;
+    long resulti;
+    Sexp s0, s1;
+    String results = malloc(MAX_STRING_LENGTH);
+    String term0, term1;
+    if (NULLP(s)) {
+        switch (op) {
+            case PLUS :
+            case MINUS :
+                return ZERO;
+                break;
+            case MULT :
+            case DIV : return ONE;
+                break;
+        }
+    } else {
+        if (ATOMP(s)) {
+            if (NUMBERP(s)) {
+                d0 = strtod(NAME_OF(s), &term0);
+                if ('\0' == *term0) { // Success
+                    s0 = find_sexp(NAME_OF(s)); // Won't s itself be retrieved here ? TBCHKD
+                    if (!NULLP(s0)) {
+                        return s0;
+                    } else {
+                        return new_atom(OBLIST, NAME_OF(s))->info;
+                    }
+                }
+            } else {
+                return error("Not a Number", s);
+            }
+        } else {
+            // Reduction of the list by op
+            s0 = f_opari(op, f_car(s));
+            d0 = strtod(NAME_OF(s0), &term0);
+            s1 = f_opari(op, f_cdr(s));
+            d1 = strtod(NAME_OF(s1), &term1);
+            if (('\0' == *term0) && ('\0' == *term1)) {
+                switch(op) {
+                    case PLUS: resultd = d0 + d1;
+                        break;
+                    case MINUS: resultd = d0 - d1;
+                        break;
+                    case MULT: resultd = d0 * d1;
+                        break;
+                    case DIV: if (ZERO != s1)
+                            resultd = d0 / d1;
+                        else
+                            return error("Division by zero", s);
+                        break;
+                }
+                // Is resultd an integer ?
+                if ( is_long_integer(resultd)) {
+                    // Yes it is ! Drop the scientific notation
+                    resulti = floor(resultd);
+                    sprintf(results, "%ld", resulti);
+                } else
+                    sprintf(results, "%lf", resultd);
+                // Is results the name of a known atom?
+                s0 = find_sexp(results);
+                if (s0 != NIL) {
+                    return s0;
+                } else {
+                    return new_atom(OBLIST, results)->info;
+                }
+                
+            }
+        }
+    }
+    return NIL;
+}
+// The four ops
+Sexp f_add(Sexp s) {
+    if (NULLP(f_cdr(s)))
+        return f_opari(PLUS, f_cons(ZERO, s));
+    else
+        return f_opari(PLUS, s);
+}
+Sexp f_sub(Sexp s) {
+    if (NULLP(f_cdr(s)))
+        return f_opari(MINUS, f_cons(ZERO, s));
+    else
+        return f_opari(MINUS, s);
+}
+Sexp f_mult(Sexp s) {
+    if (NULLP(f_cdr(s)))
+        return f_opari(MULT, f_cons(ONE, s));
+    else
+        return f_opari(MULT, s);
+}
+Sexp f_div(Sexp s) {
+    if (NULLP(f_cdr(s)))
+        return f_opari(DIV, f_cons(ONE, s));
+    else
+        return f_opari(DIV, s);
+}
 // Utility functions
+// Numerics
+bool is_long_integer(double d) {
+    return (fabs(d - floor(d)) < EPSILON);
+}
 // Input
 Sexp read1(char buffer[], bool list_in_progress, FILE *source) {
     Sexp new_symbol, r1, r2;
