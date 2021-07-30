@@ -49,10 +49,10 @@ Les conventions de nommage ont été rendues plus strictes: Les primitives sont 
 |;|Introduit un commentaire, jusqu'à la fin de la ligne|; Ignorez moi --> Aucun atome n'est créé|[n/a](n/a)|
 
 ## La TO DO list
-- Implémenter l'arithmétique entière et réelle.
-- Implémenter les comparaisons numériques.
+- ~~Implémenter l'arithmétique entière et réelle.~~
+- Implémenter les comparaisons numériques : <, <=, >, >=, =, !=.
 - ~~Permettre la lecture à la console. (SETQ A (READ)) !~~
-- Fonctions mathématiques et trigo en degrés.
+- Fonctions mathématiques et trigo en degrés décimaux. Par exemple : SQRT(2.0) et SIN(47.33).
 - Boucles. Possibles grâce à EVAL. Voir Exemples/test-boucle.nlsp
 - Liste de propriétés (property list). Voir Exemples/test-prop.nslp.
 - ~~Permettre des commentaires pour documenter le code. A faire !~~
