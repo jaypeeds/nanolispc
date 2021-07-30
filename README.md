@@ -28,8 +28,11 @@ Il a fallu faire des ajustements, l'interpréte ne lisait pas la console mais un
 Les conventions de nommage ont été rendues plus strictes: Les primitives sont nommées F suivi de la primitive : f_car, f_cdr mais pour être exploitables, ces opérateurs devraient tous avoir un résultat de type S-Exp, ou SGRAPHE dans ce code. FNULL ne respectait pas cette convention et renvoyait un booléen du langage hôte inexploitable par l'interprète.
 
 ## Petit guide du langage
+Note: Les liens sont donnés à titre indicatifs, ils sont relatifs à la version du code au moment de la documentation, et peuvent ne pas correspondre à la version actuelle.
+
 | Fonction | Description | Exemple | Code C |
 |---------|-------|------|--------|
+| + - * / | Les quatre opérations arithmétiques : Opèrent sur les Entiers, comme sur les Réels| (+ 1 2) --> 3, (- 2) --> -2, implicitement, c'est (- <élément neutre> 2), avec élément neutre = 0 pour l'addition et la soustraction. De la même manière, (/ 1 2)--> 0.500, et (/ 2) est implicitement interprété comme (/ 1 2), avec 1 = élément neutre pour la multiplication et la division. Lorsque l'opérateur est appliqué à une liste, la réduction de la liste par l'opérateur est le résultat : (+ 1 2 3) --> 6, et (*1 2 3 4 5) --> 120 |[Sexp f_opari(ArithmOp op, Sexp s);](https://github.com/jaypeeds/nanolispc/blob/09200e81dd2b4366a3422c3c5cd9620f3444c211/NanoLisp.c#L291)|
 | CAR | Extrait le premier élément d'une liste | (CAR '(A B C)) --> A | [Sexp f_car(Sexp s);](https://github.com/jaypeeds/nanolispc/blob/01a8c48a98092db635071a66499a996343d8d1b8/NanoLisp.c#L165) |
 | CDR | Extrait la sous-liste après le premier élément | (CDR '(A B C)) --> (B C) | [Sexp f_cdr(Sexp s);](https://github.com/jaypeeds/nanolispc/blob/01a8c48a98092db635071a66499a996343d8d1b8/NanoLisp.c#L177)
 | CONS | Construit une liste, partant d'un atome et d'une liste. | (CONS 'A '(B C)) --> (A B C) | [Sexp f_cons(Sexp s1, Sexp s2);](https://github.com/jaypeeds/nanolispc/blob/01a8c48a98092db635071a66499a996343d8d1b8/NanoLisp.c#L240) |
