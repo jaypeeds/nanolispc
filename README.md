@@ -52,7 +52,7 @@ Les conventions de nommage ont été rendues plus strictes: Les primitives sont 
 - ~~Implémenter l'arithmétique entière et réelle.~~
 - Implémenter les comparaisons numériques : <, <=, >, >=, =, !=.
 - ~~Permettre la lecture à la console. (SETQ A (READ)) !~~
-- Fonctions mathématiques et trigo en degrés décimaux. Par exemple : SQRT(2.0) et SIN(47.33).
+- Fonctions mathématiques et trigo en degrés décimaux. Par exemple : (SQRT 2.0) et (SIN 47.33).
 - Boucles. Possibles grâce à EVAL. Voir Exemples/test-boucle.nlsp
 - Liste de propriétés (property list). Voir Exemples/test-prop.nslp.
 - ~~Permettre des commentaires pour documenter le code. A faire !~~
