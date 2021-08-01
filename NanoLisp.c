@@ -585,7 +585,7 @@ PtObList new_atom(const PtObList position, String name) {
     while(prev != NULL && prev->next != NULL)
         prev = prev->next;
     
-    new = malloc(sizeof(object_t));
+    new = malloc(sizeof(cell_t));
     new->info = malloc(sizeof(node_t));
     // new->info->plist = NULL;
     new->info->kind = ATOM;

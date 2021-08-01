@@ -64,31 +64,30 @@
 #define FMT_NO_SPC "%s"
 #define FMT_SPC "%s "
 
-typedef unsigned char KindOfNode;
-typedef struct struct_object* PtObList;
-typedef struct struct_node* Sexp;
-typedef struct struct_atom* Atom;
-typedef struct struct_list* List;
-typedef struct struct_env* Env;
+typedef struct _cell* PtObList;
+typedef struct _node* Sexp;
+typedef struct _atom* Atom;
+typedef struct _list* List;
+typedef struct _env* Env;
 typedef char* String;
 
 enum KindOfNode {ATOM, LIST};
 enum KindOfToken {L_PAREN, R_PAREN, S_QUOTE, SYMBOL, COMMENT};
 enum ArithmOp { PLUS, MINUS, MULT, DIV };
-enum CompOp { EQU, NEQU, GT, LT, GE, LE };
+enum ComparisonOp { EQU, NEQU, GT, LT, GE, LE };
 
 
-typedef struct struct_atom {
+typedef struct _atom {
     String name;
     Sexp val;
 } atom_t;
 
-typedef struct struct_list {
+typedef struct _list {
     Sexp car;
     Sexp cdr;
 } list_t;
 
-typedef struct struct_node {
+typedef struct _node {
     enum KindOfNode kind;
     union {
         Atom atom;
@@ -97,13 +96,13 @@ typedef struct struct_node {
     // PtObList plist;
 } node_t;
 
-typedef struct struct_object {
+typedef struct _cell {
     Sexp info;
     PtObList next;
-} object_t ;
+} cell_t ;
 
 // Globales
-typedef struct struct_env {
+typedef struct _env {
     bool _error;
     bool _done;
     bool _trace;
